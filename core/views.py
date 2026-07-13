@@ -1112,6 +1112,7 @@ def descargar_dc3_relleno(request, empleado_id):
     response["Content-Disposition"] = f'attachment; filename="{nombre_archivo}"'
 
     return response
+
 import pandas as pd
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
