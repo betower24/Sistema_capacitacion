@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-3 p-4 bg-white">
+            <div class="d-flex align-items-center mb-2">
+                <span class="fs-4 me-2"></span>
+                <h4 class="fw-bold m-0 text-dark">Registro de Capacitaciones</h4>
+            </div>
+            <p class="text-muted small mb-4">Captura los datos del bloque correspondiente. Los campos se organizan horizontalmente.</p>
+            
+            <form method="post" autocomplete="off">
+                {% csrf_token %}
+                
+                <div class="django-form-fields horizontal-form-grid">
+                    {{ form.as_p }}
+                </div>
+
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-primary bg-gradient px-4 py-2 fw-bold shadow-sm">
+                         Guardar Registro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-3 p-4 bg-white">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                <div class="d-flex align-items-center">
+                    <span class="fs-4 me-2"></span>
+                    <h5 class="fw-bold m-0 text-dark">Matriz de Participantes Capacitados</h5>
+                </div>
+                <span class="badge bg-secondary rounded-pill fs-7 px-3 py-2">
+                    {{ registros|length }} Registros
+                </span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle m-0 small header-matriz text-center">
+                    <thead>
+                        <tr class="table-primary text-dark fw-bold border-bottom-0">
+                            <th rowspan="2" class="align-middle bg-primary text-white">Consecutivo</th>
+                            <th rowspan="2" class="align-middle bg-primary text-white text-start">Nombre Tipo Capacitación</th>
+                            <th class="bg-primary text-white">Participantes</th>
+                            <th colspan="2" class="bg-info text-dark">Total Participantes</th>
+                            <th class="bg-warning text-dark">Total Capacitados en:</th>
+                        </tr>
+                        <tr class="table-light text-secondary fw-semibold border-top-0">
+                            <th>Participantes Operativos</th>
+                            <th>Hombres</th>
+                            <th>Mujeres</th>
+                            <th>Fortalecimiento del Desempeño</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reg in registros %}
+                        <tr>
+                            <td class="fw-bold text-secondary">{{ reg.consecutivo }}</td>
+                            <td class="text-start fw-medium text-dark">{{ reg.nombre_tipo_capacitacion }}</td>
+                            <td>{{ reg.participantes_operativos|default:0 }}</td>
+                            <td class="text-primary">{{ reg.hombres|default:0 }}</td>
+                            <td class="text-danger">{{ reg.mujeres|default:0 }}</td>
+                            <td>
+                                <span class="badge bg-light text-dark border px-2 py-1 fw-normal">
+                                     {{ reg.total_participantes|default:0 }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <div class="fs-2 mb-2"></div>
+                                No hay datos capturados en esta sección todavía.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const inputs = document.querySelectorAll('.django-form-fields input, .django-form-fields select, .django-form-fields textarea');
+        const paragraphs = document.querySelectorAll('.django-form-fields p');
+
+        // Adaptamos los contenedores <p> nativos de Django
+        paragraphs.forEach(p => p.classList.add('mb-2', 'w-100'));
+
+        inputs.forEach(input => {
+            if (input.tagName.toLowerCase() === 'select') {
+                input.classList.add('form-select', 'py-2');
+            } else {
+                input.classList.add('form-control', 'py-2');
+            }
+        });
+    });
+</script>
+
+<style>
+    /* Grid dinámico para el Formulario Horizontal */
+    .horizontal-form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    /* En pantallas medianas (Tablets) se acomoda en 2 o 3 columnas */
+    @media (min-width: 576px) {
+        .horizontal-form-grid {
+            grid-template-columns: repeat(2, 1fr);
+            align-items: end;
+        }
+    }
+
+    /* En pantallas de computadora (Desktops) se expande hasta en 4 columnas */
+    @media (min-width: 992px) {
+        .horizontal-form-grid {
+            grid-template-columns: repeat(4, 1fr);
+            align-items: end;
+        }
+    }
+
+    /* Estilos personalizados para emular la jerarquía de la imagen original */
+    .header-matriz th {
+        font-size: 0.82rem;
+        padding: 10px 8px !important;
+        vertical-align: middle;
+    }
+
+    .django-form-fields label {
+        display: block;
+        margin-bottom: 0.4rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+</style>
+
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card p-4 shadow-sm border-0 mb-4" style="border-radius: 20px; background: #ffffff;">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <h3 class="fw-bold text-dark"><i class="bi bi-file-earmark-excel-fill text-success"></i> Automatización de Formato DC-3 Excel</h3>
+                <p class="text-muted mb-0">Localiza empleados cargados de forma masiva en SQLite para rellenar la plantilla oficial de la STPS.</p>
+            </div>
+            <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                <a href="{% url 'plan_captura' %}" class="btn btn-secondary" style="border-radius: 10px;">Volver al Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-4 shadow-sm border-0 mb-4" style="border-radius: 15px;">
+        <label for="buscar_trabajador" class="form-label fw-bold text-secondary">Escribe el nombre del empleado a procesar:</label>
+        <div class="input-group">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="buscar_trabajador" class="form-control border-start-0 py-2" placeholder="Ej. Juan Pérez..." style="border-radius: 0 10px 10px 0;">
+        </div>
+    </div>
+
+    {% if error_horas %}
+        <div class="alert alert-danger text-center p-4 shadow-sm" style="border-radius: 12px;">
+            <i class="bi bi-exclamation-octagon-fill fs-3 d-block mb-2"></i>
+            <strong>Criterio Normativo Insuficiente:</strong> El trabajador seleccionado fue localizado en SQLite, pero no cumple con las 40 horas mínimas de capacitación requeridas por la normatividad de la STPS.
+        </div>
+    {% elif empleado and capacitacion %}
+        <div class="card p-4 shadow-sm border-0 border-start border-success border-5" style="border-radius: 15px; background: #ffffff;">
+            <h5 class="fw-bold text-success mb-3"><i class="bi bi-check-circle-fill"></i> Datos Listos para Inyección En Plantilla</h5>
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <p class="mb-1 text-muted small">Nombre del Trabajador:</p>
+                    <p class="fw-bold text-dark fs-5">{{ empleado.nombre_completo }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-1 text-muted small">CURP:</p>
+                    <p class="fw-bold text-dark fs-5">{{ empleado.curp }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-1 text-muted small">Curso a Acreditar:</p>
+                    <p class="fw-bold text-primary">{{ capacitacion.curso.nombre_curso }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-1 text-muted small">Duración Registrada en SQLite:</p>
+                    <p class="fw-bold text-dark"><span class="badge bg-success fs-6">{{ capacitacion.curso.duracion_horas }} Horas Validadas</span></p>
+                </div>
+            </div>
+
+            <div class="text-end mt-4 pt-3 border-top">
+                <a href="{% url 'descargar_dc3_relleno' empleado.id %}" class="btn btn-success btn-lg d-inline-flex align-items-center gap-2" style="border-radius: 12px; font-weight: 600;">
+                    <i class="bi bi-download"></i> Descargar Excel DC-3 Completado
+                </a>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center p-5 border bg-light shadow-sm" style="border-radius: 20px; border-style: dashed !important;">
+            <i class="bi bi-file-earmark-arrow-up text-muted fs-1 d-block mb-3"></i>
+            <h5 class="text-muted">Esperando Selección de Personal</h5>
+            <p class="text-muted small mb-0">Usa el motor de búsqueda superior para extraer los datos relacionales de SQLite y estamparlos sobre el archivo 'DC-3-Formato-Excel-Descargable.xlsx'.</p>
+        </div>
+    {% endif %}
+</div>
+
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $("#buscar_trabajador").autocomplete({
+            source: "{% url 'visor_dc3_excel' %}",
+            minLength: 2,
+            select: function(event, ui) {
+                // Al elegir al empleado, redirecciona pasando su ID por GET
+                window.location.href = "?empleado_id=" + ui.item.id;
+            }
+        });
+    });
+</script>
+{% endblock %}

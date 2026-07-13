@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h5 class="mb-0 fw-bold"><i class="fa-solid fa-briefcase me-2"></i>Catálogo Nacional de Ocupaciones</h5>
+                </div>
+                <div class="card-body p-4">
+                    
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <p class="text-secondary small text-center mb-4">
+                        Sube el archivo Excel exclusivo del catálogo de ocupaciones. El sistema leerá dinámicamente las claves y descripciones para inyectarlas de forma extendida en los formatos DC-3.
+                    </p>
+                    
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="archivo_excel" class="form-label fw-semibold text-dark">Seleccionar Archivo Excel (.xlsx)</label>
+                            <input type="file" class="form-control form-control-lg" id="archivo_excel" name="archivo_excel" accept=".xlsx, .xls" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold">Guardar Catálogo de Ocupaciones</button>
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Regresar al Dashboard</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

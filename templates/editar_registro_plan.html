@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-4">
+    <h4>Editar Expediente: {{ registro.nombre }}</h4>
+    <p class="text-muted small">Realiza los cambios pertinentes y presiona guardar para actualizar el Plan Captura.</p>
+</div>
+
+<div class="card border-0 bg-white p-4 rounded-4 shadow-sm border max-w-2xl mx-auto">
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <div class="row g-3">
+            {% for field in form %}
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold text-muted">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="d-flex gap-2 justify-content-end mt-4 pt-3 border-top">
+            <a href="{% url 'lista_modificar_plan' %}" class="btn btn-light rounded-3 px-4">Cancelar</a>
+            <button type="submit" class="btn btn-primary rounded-3 px-4" style="background-color: #4f46e5; border: none;">
+                <i class="bi bi-check-circle me-1"></i> Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

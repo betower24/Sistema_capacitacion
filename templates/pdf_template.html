@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Formato DC-3 - Constancia de Competencias Laborales - Liconsa</title>
+    <style>
+        @page {
+            size: letter portrait;
+            margin: 12mm 12mm;
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #111111;
+            font-size: 9pt;
+            line-height: 1.35;
+            margin: 0;
+            padding: 0;
+        }
+        .dc3-page {
+            width: 100%;
+            page-break-after: always;
+            box-sizing: border-box;
+        }
+        .dc3-page:last-child {
+            page-break-after: avoid;
+        }
+        
+        /* Encabezado Institucional con Logo */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+        }
+        .header-table td {
+            border: none !important;
+            padding: 0;
+            vertical-align: middle;
+        }
+        .logo-container {
+            width: 25%;
+            text-align: left;
+        }
+        .logo-img {
+            max-width: 140px; /* Tamaño optimizado para el logo */
+            height: auto;
+            display: block;
+        }
+        .title-container {
+            width: 55%;
+            padding-left: 10px;
+        }
+        .main-title {
+            font-size: 14pt;
+            font-weight: 900;
+            color: #6A1B29; /* Guinda Institucional */
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        .subtitle {
+            font-size: 9pt;
+            font-weight: bold;
+            color: #4A4A4A;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+        .stps-badge {
+            border: 2px solid #6A1B29 !important;
+            color: #6A1B29;
+            font-weight: 900;
+            font-size: 14pt;
+            text-align: center;
+            padding: 6px !important;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+
+        /* Secciones de Datos */
+        .section-header {
+            background-color: #6A1B29;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 8.5pt;
+            padding: 5px 10px;
+            margin-top: 12px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: 2px;
+        }
+        
+        /* Tablas de Datos */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 5px;
+        }
+        .data-table td {
+            padding: 5px 8px;
+            border: 1px solid #777777;
+            vertical-align: middle;
+        }
+        .label {
+            font-size: 7.5pt;
+            font-weight: bold;
+            color: #333333;
+            text-transform: uppercase;
+            background-color: #F5F5F5;
+            line-height: 1.2;
+        }
+        .field-value {
+            font-size: 9.5pt;
+            font-weight: bold;
+            color: #000000;
+        }
+        .mono-value {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11pt;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        /* Instrucciones / Texto Legal */
+        .instructions {
+            font-size: 7pt;
+            color: #555555;
+            text-align: justify;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            line-height: 1.3;
+            padding: 0 4px;
+        }
+
+        /* Contenedor de Firmas Estructurado */
+        .signatures-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .signatures-table td {
+            border: none !important;
+            padding: 0;
+            vertical-align: bottom;
+        }
+        .signature-gap {
+            height: 110px; /* Mantiene el espacio amplio para firmas grandes o sellos */
+        }
+        .signature-box {
+            text-align: center;
+            font-size: 8pt;
+            border-top: 1px solid #111111;
+            padding-top: 6px;
+            line-height: 1.3;
+        }
+        .signature-title {
+            font-size: 7.5pt;
+            color: #555555;
+            text-transform: uppercase;
+            display: block;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    {% for reg in registros %}
+    <div class="dc3-page">
+        
+        <table class="header-table">
+            <tr>
+                <td class="logo-container">
+                    <img src="LECHE.jpg" alt="Logo Leche para el Bienestar" class="logo-img">
+                </td>
+                <td class="title-container">
+                    <div class="main-title">FORMATO DC-3</div>
+                    <div class="subtitle">Constancia de Competencias o de Habilidades Laborales</div>
+                </td>
+                <td class="stps-badge" style="width: 20%;">
+                    STPS
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-header">1. Datos del Trabajador</div>
+        <table class="data-table">
+            <tr>
+                <td class="label" style="width: 20%;">Nombre completo<br><span style="font-size:6pt; font-weight:normal;">(Apellidos y Nombre(s))</span></td>
+                <td class="field-value" colspan="3">{{ reg.nombre_trabajador|upper }}</td>
+            </tr>
+            <tr>
+                <td class="label" style="width: 20%;">CURP</td>
+                <td class="field-value mono-value" style="width: 35%;">{{ reg.curp|upper }}</td>
+                <td class="label" style="width: 15%;">Puesto / Ocupación</td>
+                <td class="field-value" style="width: 30%;">{{ reg.puesto|upper }}</td>
+            </tr>
+        </table>
+
+        <div class="section-header">2. Datos de la Empresa</div>
+        <table class="data-table">
+            <tr>
+                <td class="label" style="width: 20%;">Nombre o Razón Social</td>
+                <td class="field-value" colspan="3">LECHE PARA EL BIENESTAR S.A. DE C.V.</td>
+            </tr>
+            <tr>
+                <td class="label" style="width: 20%;">R.F.C.</td>
+                <td class="field-value mono-value" style="width: 35%;">LIC950821M84</td>
+                
+        </table>
+
+        <div class="section-header">3. Datos del Programa de Capacitación, Adiestramiento y Productividad</div>
+        <table class="data-table">
+            <tr>
+                <td class="label" style="width: 20%;">Nombre del Curso</td>
+                <td class="field-value" colspan="3" style="font-size: 10.5pt; color: #6A1B29;">{{ reg.curso.nombre|upper }}</td>
+            </tr>
+            <tr>
+                <td class="label" style="width: 20%;">Duración en Horas</td>
+                <td class="field-value" style="width: 20%;">{{ reg.duracion }} HORAS</td>
+                <td class="label" style="width: 15%;">Periodo de Ejecución</td>
+                <td class="field-value" style="width: 45%; font-size: 8.5pt;">
+                    DEL {{ reg.fecha_inicio|date:"d" }} DE {{ reg.fecha_inicio|date:"F"|upper }} DE {{ reg.fecha_inicio|date:"Y" }} 
+                    AL {{ reg.fecha_termino|date:"d" }} DE {{ reg.fecha_termino|date:"F"|upper }} DE {{ reg.fecha_termino|date:"Y" }}
+                </td>
+            </tr>
+            <tr>
+                <td class="label" style="width: 20%;">Área Temática</td>
+                <td class="field-value" style="width: 30%;">{{ reg.modalidad_curso|upper }}</td>
+                <td class="label" style="width: 15%;">Agente Capacitador</td>
+                <td class="field-value" style="width: 35%; font-size: 8.5pt;">INSTRUCTOR INTERNO / REGISTRO STPS</td>
+            </tr>
+        </table>
+
+
+        <div class="instructions">
+            Los datos se asientan en esta constancia bajo protesta de decir verdad, apercibidos de la responsabilidad en que incurre todo aquel que asienta datos falsos. El trabajador manifiesta que los datos personales asentados son correctos y autoriza su uso para los fines legales correspondientes de la Secretaría del Trabajo y Previsión Social.
+        </div>
+<br>
+<br>
+<br>
+        <table class="signatures-table">
+            <tr>
+                <td style="width: 30%;">
+                    <div class="signature-gap"></div>
+                    <div class="signature-box">
+                        <strong>JOSE RICARDO GARCIA TOSCOYOGUA</strong>
+                        <span class="signature-title">Representante de los Trabajadores</span>
+                    </div>
+                </td>
+                
+                <td style="width: 5%;"></td>
+                
+                <td style="width: 30%;">
+                    <div class="signature-gap"></div>
+                    <div class="signature-box">
+                        <strong>BLANCA TELLEZ REZA</strong>
+                        <span class="signature-title">Patrón o Representante Legal</span>
+                    </div>
+                </td>
+                
+                <td style="width: 5%;"></td>
+                
+                <td style="width: 30%;">
+                    <div class="signature-gap"></div>
+                    <div class="signature-box">
+                        <strong>BLANCA TELLEZ REZA</strong>
+                        <span class="signature-title">Instructor / Capacitador</span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+    </div>
+    {% empty %}
+    <div style="text-align: center; padding: 60px; color: #7f8c8d; font-family: sans-serif; border: 2px dashed #bdc3c7; margin: 20px; border-radius: 5px;">
+        <strong>Aviso del Sistema:</strong> No hay registros seleccionados para generar formatos DC-3 en este lote.
+    </div>
+    {% endfor %}
+
+</body>
+</html>

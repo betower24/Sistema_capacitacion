@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="row justify-content-center align-items-center" style="min-height: 65vh;">
+    <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+        
+        <div class="card shadow border-0 rounded-4 p-4 p-sm-5 bg-white">
+            <div class="text-center mb-4">
+                <div class="bg-primary bg-gradient text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                    🔒
+                </div>
+                <h3 class="fw-bold text-dark m-0">Iniciar Sesión</h3>
+                <p class="text-muted small">Ingresa tus credenciales para acceder</p>
+            </div>
+
+            <form method="post" autocomplete="off">
+                {% csrf_token %}
+                
+                <div class="django-form-fields mb-4">
+                    {{ form.as_p }}
+                </div>
+
+                <button type="submit" class="btn btn-primary bg-gradient w-100 py-2 fw-bold shadow-sm rounded-3">
+                    Ingresar al Sistema
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Estilizar los párrafos e inputs automáticos de Django
+        const inputs = document.querySelectorAll('.django-form-fields input');
+        const paragraphs = document.querySelectorAll('.django-form-fields p');
+
+        paragraphs.forEach(p => p.classList.add('mb-3'));
+        inputs.forEach(input => input.classList.add('form-control', 'py-2'));
+
+        // DETECCIÓN: Alerta de error si el login falla en el backend
+        {% if form.errors or form.non_field_errors %}
+            Swal.fire({
+                icon: 'error',
+                title: 'Usuario Desconocido',
+                text: 'Las credenciales ingresadas no pertenecen a ningún usuario registrado.',
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Intentar de nuevo'
+            });
+        {% endif %}
+    });
+</script>
+
+<style>
+    .django-form-fields label {
+        display: block;
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #495057;
+    }
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+    /* Oculta la lista nativa de texto de errores de Django para no duplicar el SweetAlert */
+    .errorlist { display: none; }
+</style>
+
+{% endblock %}

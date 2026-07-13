@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-3 p-4 bg-white">
+            <div class="d-flex align-items-center mb-2">
+                <span class="fs-4 me-2"></span>
+                <h4 class="fw-bold m-0 text-dark">Programa Real</h4>
+            </div>
+            <p class="text-muted small mb-4">Ingresa la información correspondiente para guardar un nuevo registro en el programa.</p>
+            
+            <form method="post" autocomplete="off">
+                {% csrf_token %}
+                
+                <div class="django-form-fields horizontal-form-grid">
+                    {{ form.as_p }}
+                </div>
+
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-success bg-gradient px-4 py-2 fw-bold shadow-sm">
+                        Guardar Registro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-8">
+        <div class="card shadow-sm border-0 rounded-3 p-4 bg-white h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                <div class="d-flex align-items-center">
+                    <span class="fs-4 me-2"></span>
+                    <h5 class="fw-bold m-0 text-dark">Registros Capturados</h5>
+                </div>
+                <span class="badge bg-secondary rounded-pill fs-7 px-3 py-2">
+                    {{ registros|length }} Filas
+                </span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle m-0 small">
+                    <thead class="table-light text-secondary text-nowrap">
+                        <tr>
+                            <th>No.</th>
+                            <th>Nombre</th>
+                            <th>Importe</th>
+                            <th>Tipo de Acción</th>
+                            <th>Modalidad</th>
+                            <th>Fecha</th>
+                            <th>Instructor</th>
+                            <th>Operativo</th>
+                            <th>Promotores</th>
+                            <th>Admin.</th>
+                            <th>Confianza</th>
+                            <th>Total Part.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reg in registros %}
+                        <tr>
+                            <td>{{ reg.no }}</td>
+                            <td class="fw-medium text-dark">{{ reg.nombre }}</td>
+                            <td class="text-success fw-medium">${{ reg.importe }}</td>
+                            <td>{{ reg.tipo_accion }}</td>
+                            <td>{{ reg.modalidad }}</td>
+                            <td class="text-nowrap">{{ reg.fecha }}</td>
+                            <td>{{ reg.instructor }}</td>
+                            <td class="text-center">{{ reg.operativo }}</td>
+                            <td class="text-center">{{ reg.promotores }}</td>
+                            <td class="text-center">{{ reg.administrativo }}</td>
+                            <td class="text-center">{{ reg.confianza }}</td>
+                            <td class="text-center"><strong>{{ reg.total_participantes }}</strong></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="12" class="text-center py-5 text-muted">
+                                <div class="fs-2 mb-2"></div>
+                                No hay registros capturados en este programa todavía.
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <tr class="table-dark align-middle text-center font-weight-bold fw-bold">
+                            <td colspan="2" class="text-start ps-3">TOTALES</td>
+                            <td class="text-start">${{ totales.total_importe|default:0 }}</td>
+                            <td colspan="4" class="text-muted text-center">---</td>
+                            <td>{{ totales.total_operativo|default:0 }}</td>
+                            <td>{{ totales.total_promotores|default:0 }}</td>
+                            <td>{{ totales.total_administrativo|default:0 }}</td>
+                            <td>{{ totales.total_confianza|default:0 }}</td>
+                            <td class="table-primary text-dark">{{ total_general_participantes|default:0 }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <div class="card shadow-sm border-0 rounded-3 p-4 bg-white h-100 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex align-items-center mb-3 border-bottom pb-2">
+                    <span class="fs-4 me-2"></span>
+                    <h5 class="fw-bold m-0 text-dark">Distribución de Participantes</h5>
+                </div>
+                <p class="text-muted small">Representación porcentual del total de participantes por puesto.</p>
+            </div>
+            
+            <div class="my-auto py-3 mx-auto" style="position: relative; width: 100%; max-width: 280px;">
+                <canvas id="grafica"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Estilizar los inputs y párrafos que crea Django en automático
+        const inputs = document.querySelectorAll('.django-form-fields input, .django-form-fields select, .django-form-fields textarea');
+        const paragraphs = document.querySelectorAll('.django-form-fields p');
+
+        paragraphs.forEach(p => p.classList.add('mb-2', 'w-100'));
+
+        inputs.forEach(input => {
+            if (input.tagName.toLowerCase() === 'select') {
+                input.classList.add('form-select', 'py-2');
+            } else {
+                input.classList.add('form-control', 'py-2');
+            }
+        });
+
+        // CONFIGURACIÓN DE LA GRÁFICA DE PASTEL (Cambiado a 'pie')
+        new Chart(document.getElementById('grafica'), {
+            type: 'pie',
+            data: {
+                labels: ['Operativo', 'Promotores', 'Administrativo', 'Confianza'],
+                datasets: [{
+                    label: 'Total General de Participantes',
+                    data: [
+                        {{ totales.total_operativo|default:0 }}, 
+                        {{ totales.total_promotores|default:0 }}, 
+                        {{ totales.total_administrativo|default:0 }}, 
+                        {{ totales.total_confianza|default:0 }}
+                    ],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.75)',   // Operativo (Azul)
+                        'rgba(255, 206, 86, 0.75)',   // Promotores (Amarillo)
+                        'rgba(75, 192, 192, 0.75)',   // Administrativo (Verde menta)
+                        'rgba(255, 99, 132, 0.75)'    // Confianza (Rosa)
+                    ],
+                    borderColor: [
+                        '#ffffff',
+                        '#ffffff',
+                        '#ffffff',
+                        '#ffffff'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            font: { size: 11 }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+<style>
+    /* Grid dinámico para el formulario horizontal */
+    .horizontal-form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    @media (min-width: 576px) {
+        .horizontal-form-grid {
+            grid-template-columns: repeat(2, 1fr);
+            align-items: end;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .horizontal-form-grid {
+            grid-template-columns: repeat(4, 1fr); /* 4 campos por fila si la pantalla es muy grande */
+            align-items: end;
+        }
+    }
+
+    .django-form-fields label {
+        display: block;
+        margin-bottom: 0.4rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.15);
+    }
+</style>
+
+{% endblock %}

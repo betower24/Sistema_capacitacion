@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="container mt-4">
+
+    <!-- HEADER -->
+    <div class="card p-4 shadow-sm border-0 mb-4" style="border-radius: 20px;">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <h3 class="fw-bold text-dark">
+                    <i class="bi bi-file-earmark-word-fill text-primary"></i>
+                    Automatización de Formato DC-3 Word (.docx)
+                </h3>
+                <p class="text-muted mb-0">
+                    Localiza empleados en SQLite y genera automáticamente el formato oficial DC-3 en Word listo para impresión.
+                </p>
+            </div>
+            <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary" style="border-radius: 10px;">
+                    Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- BUSCADOR -->
+    <div class="card p-4 shadow-sm border-0 mb-4" style="border-radius: 15px;">
+        <label class="form-label fw-bold text-secondary">
+            Escribe el nombre del empleado:
+        </label>
+
+        <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">
+                <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" id="buscar_trabajador"
+                   class="form-control border-start-0 py-2"
+                   placeholder="Ej. Juan Pérez...">
+        </div>
+    </div>
+
+    <!-- ERROR HORAS -->
+    {% if error_horas %}
+    <div class="alert alert-danger text-center p-4 shadow-sm" style="border-radius: 12px;">
+        <i class="bi bi-exclamation-octagon-fill fs-3 d-block mb-2"></i>
+        <strong>Criterio Normativo Insuficiente</strong><br>
+        El trabajador fue localizado, pero solo cuenta con {{ registro.duracion }} horas registradas (mínimo 40 horas).
+    </div>
+
+    <!-- RESULTADO -->
+    {% elif registro %}
+    <div class="card p-4 shadow-sm border-start border-success border-5" style="border-radius: 15px;">
+
+        <h5 class="fw-bold text-success mb-3">
+            <i class="bi bi-check-circle-fill"></i>
+            Datos listos para generar Word DC-3
+        </h5>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <small class="text-muted">Nombre</small>
+                <p class="fw-bold fs-5">{{ nombre_completo }}</p>
+            </div>
+
+            <div class="col-md-6">
+                <small class="text-muted">CURP</small>
+                <p class="fw-bold fs-5">{{ registro.curp }}</p>
+            </div>
+
+            <div class="col-md-6">
+                <small class="text-muted">Curso</small>
+                <p class="fw-bold text-primary">{{ registro.nombre_curso }}</p>
+            </div>
+
+            <div class="col-md-6">
+                <small class="text-muted">Horas</small><br>
+                <span class="badge bg-success fs-6">
+                    {{ registro.duracion }} horas validadas
+                </span>
+            </div>
+        </div>
+
+        <!-- BOTÓN DESCARGA -->
+        <div class="text-end mt-4 pt-3 border-top">
+
+            <a href="{% url 'descargar_dc3_relleno' registro.id %}"
+               id="btnDescargar"
+               class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2"
+               style="border-radius: 12px; font-weight: 600;">
+
+                <i class="bi bi-file-earmark-word-fill"></i>
+                Generar y Descargar Word DC-3
+            </a>
+
+        </div>
+    </div>
+
+    <!-- VACÍO -->
+    {% else %}
+    <div class="text-center p-5 border bg-light shadow-sm"
+         style="border-radius: 20px; border-style: dashed !important;">
+        <i class="bi bi-file-earmark-arrow-up text-muted fs-1 d-block mb-3"></i>
+        <h5 class="text-muted">Esperando selección de personal</h5>
+        <p class="text-muted small">
+            Busca un empleado para generar su formato DC-3 en Word.
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- AUTOCOMPLETE -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+<script>
+$(function () {
+    $("#buscar_trabajador").autocomplete({
+        source: "{% url 'visor_dc3_excel' %}",
+        minLength: 2,
+        select: function (event, ui) {
+            window.location.href = "?empleado_id=" + ui.item.id;
+        }
+    });
+
+    // SWEETALERT AL DESCARGAR
+    $("#btnDescargar").on("click", function (e) {
+        e.preventDefault();
+
+        const url = $(this).attr("href");
+
+        Swal.fire({
+            title: "Generando documento Word",
+            text: "Se está creando el formato DC-3...",
+            icon: "info",
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            timer: 1200,
+            didClose: () => {
+                window.location.href = url;
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container my-4">
+    <h3 class="mb-2">Control Dinámico de Cursos Nuevos</h3>
+    <p class="text-muted">Gestiona las asignaciones de participantes y actualiza el histórico mensual.</p>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card p-2 bg-white shadow-sm">
+                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                    {% for key, val in meses_dict.items %}
+                        <a href="?mes={{ key }}" 
+                           class="btn btn-sm {% if mes_seleccionado == key %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            {{ val }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4 p-3 {% if editando %}border-warning bg-light-warning{% else %}bg-light{% endif %} shadow-sm">
+        <h5 class="card-title text-uppercase font-weight-bold">
+            {% if editando %} ✏️ Editando Curso Seleccionado {% else %} ➕ Añadir Registro a {{ nombre_mes }} {% endif %}
+        </h5>
+        <form method="post">
+            {% csrf_token %}
+            <div class="row align-items-end">
+                <div class="col-12">
+                    <div class="row">{{ form.as_p }}</div>
+                </div>
+            </div>
+            <div class="mt-2">
+                <button type="submit" class="btn {% if editando %}btn-warning{% else %}btn-primary{% endif %}">
+                    {% if editando %} Actualizar Datos {% else %} Guardar en {{ nombre_mes }} {% endif %}
+                </button>
+                {% if editando %}
+                    <a href="?mes={{ mes_seleccionado }}" class="btn btn-secondary text-white">Cancelar Edición</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive shadow-sm">
+        <table class="table table-bordered text-center align-middle" style="font-size: 12px; border: 2px solid #000;">
+            <thead>
+                <tr style="background-color: #00b0f0; color: white;">
+                    <th colspan="8" class="fs-4 py-1" style="border: 1px solid #000; text-transform: uppercase;">
+                        {{ nombre_mes }} 2026
+                    </th>
+                    <th colspan="3" style="background-color: #b4c6e7; color: #0000ff; border: 1px solid #000;">Total_Participantes</th>
+                </tr>
+                <tr style="background-color: #f2f2f2; font-weight: bold;">
+                    <th style="border: 1px solid #000; width: 200px;">Nombre del Curso</th>
+                    <th style="border: 1px solid #000;">CANTIDAD</th>
+                    <th style="border: 1px solid #000;">CONSTANCIAS</th>
+                    <th style="border: 1px solid #000; width: 90px;">OPERATIVO SINDICALIZADO</th>
+                    <th style="border: 1px solid #000; width: 90px;">PROMOTORES SOCIALES</th>
+                    <th style="border: 1px solid #000; width: 90px;">ADMINISTRATIVO SINDICALIZADO</th>
+                    <th style="border: 1px solid #000; width: 90px;">CONFIANZA</th>
+                    <th style="border: 1px solid #000; width: 90px;">TOTAL PARTICIPANTES</th>
+                    <th style="background-color: #d9e1f2; border: 1px solid #000; width: 70px;">Hombres</th>
+                    <th style="background-color: #d9e1f2; border: 1px solid #000; width: 70px;">Mujeres</th>
+                    <th style="background-color: #f8d7da; border: 1px solid #000; width: 60px;">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reg in registros %}
+                <tr>
+                    <td rowspan="2" class="text-start bg-light" style="border: 1px solid #000; font-weight: bold; vertical-align: middle;">
+                        {{ reg.nombre }}
+                    </td>
+                    <td style="border: 1px solid #000; height: 30px;"></td>
+                    <td style="border: 1px solid #000;"></td>
+                    <td style="border: 1px solid #000;"></td>
+                    <td style="border: 1px solid #000;"></td>
+                    <td style="border: 1px solid #000;"></td>
+                    <td style="border: 1px solid #000;"></td>
+                    <td style="border: 1px solid #000;"></td>
+                    <td style="border: 1px solid #000;"></td>
+                    <td style="border: 1px solid #000;"></td>
+                    <td rowspan="2" style="border: 1px solid #000; vertical-align: middle;">
+                        <a href="?mes={{ mes_seleccionado }}&editar_id={{ reg.id }}" class="btn btn-sm btn-warning py-1 px-2">
+                            ✏️ Editar
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="background-color: #d9e1f2; border: 1px solid #000; font-weight: bold;">{{ reg.cantidad }}</td>
+                    <td style="background-color: #d9e1f2; border: 1px solid #000; font-weight: bold;">{{ reg.constancia }}</td>
+                    <td style="border: 1px solid #000;">{{ reg.operativo }}</td>
+                    <td style="border: 1px solid #000;">{{ reg.promotores }}</td>
+                    <td style="border: 1px solid #000;">{{ reg.administrativo }}</td>
+                    <td style="border: 1px solid #000;">{{ reg.confianza }}</td>
+                    <td style="border: 1px solid #000; font-weight: bold;">{{ reg.total_participantes }}</td>
+                    <td style="border: 1px solid #000;">{{ reg.hombres }}</td>
+                    <td style="border: 1px solid #000;">{{ reg.mujeres }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="11" class="text-center p-4 text-muted">Sin cursos registrados en {{ nombre_mes }}.</td>
+                </tr>
+                {% endfor %}
+
+                <tr style="font-weight: bold;">
+                    <td class="text-start" style="border: 1px solid #000;">TOTALES</td>
+                    <td style="background-color: #d9e1f2; border: 1px solid #000;">{{ totales.total_cantidad|default:0 }}</td>
+                    <td style="background-color: #d9e1f2; border: 1px solid #000;">{{ totales.total_constancia|default:0 }}</td>
+                    <td style="background-color: #e2efda; border: 1px solid #000;">{{ totales.total_operativo|default:0 }}</td>
+                    <td style="background-color: #e2efda; border: 1px solid #000;">{{ totales.total_promotores|default:0 }}</td>
+                    <td style="background-color: #e2efda; border: 1px solid #000;">{{ totales.total_administrativo|default:0 }}</td>
+                    <td style="background-color: #e2efda; border: 1px solid #000;">{{ totales.total_confianza|default:0 }}</td>
+                    <td style="background-color: #c9daf8; border: 1px solid #000;">{{ total_general|default:0 }}</td>
+                    <td colspan="3" style="border: none; background-color: transparent;"></td>
+                </tr>
+
+                <tr>
+                    <td colspan="5" style="border: none; background-color: transparent;"></td>
+                    <td style="background-color: #e1d5e7; font-weight: bold; border: 1px solid #000;">TOTAL</td>
+                    <td style="background-color: #c9daf8; font-weight: bold; border: 1px solid #000;">{{ total_general|default:0 }}</td>
+                    <td colspan="4" style="border: none; background-color: transparent;"></td>
+                </tr>
+
+                <tr>
+                    <td colspan="6" style="border: none; background-color: transparent;"></td>
+                    <td style="font-weight: bold; border: 1px solid #000; background-color: #f2f2f2;">TOTAL</td>
+                    <td style="border: 1px solid #000; font-weight: bold;">{{ totales.total_hombres|default:0 }}</td>
+                    <td style="border: 1px solid #000; font-weight: bold;">{{ totales.total_mujeres|default:0 }}</td>
+                    <td style="border: none; background-color: transparent;"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

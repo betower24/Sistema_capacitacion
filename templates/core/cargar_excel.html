@@ -1,0 +1,172 @@
+{% extends 'base.html' %} 
+{% block content %} 
+<div class="row justify-content-center"> 
+    <div class="col-md-8 col-lg-6"> 
+        {% if messages %} 
+            {% for message in messages %} 
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 rounded-4 shadow-sm mb-4" role="alert"> 
+                    <div class="d-flex align-items-center gap-2"> 
+                        <i class="bi {% if message.tags == 'error' %}bi-exclamation-triangle-fill text-danger{% else %}bi-check-circle-fill text-success{% endif %} fs-5"></i> 
+                        <span class="fw-medium text-dark" style="font-size: 0.9rem;">{{ message }}</span> 
+                    </div> 
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> 
+                </div> 
+            {% endfor %} 
+        {% endif %} 
+
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden bg-white"> 
+            <div class="card-body p-5"> 
+                <div class="text-center mb-4"> 
+                    <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-3 p-3 mb-3" style="width: 56px; height: 56px;"> 
+                        <i class="bi bi-file-earmark-spreadsheet-fill fs-3 text-success"></i> 
+                    </div> 
+                    <h4 class="fw-bold text-dark mb-1">Importar Plan de Captura</h4> 
+                    <p class="text-muted small">Selecciona tu archivo de Excel para mapear y guardar los registros en el sistema.</p> 
+                </div> 
+
+                <form action="{% url 'cargar_excel' %}" method="post" enctype="multipart/form-data" id="uploadExcelForm"> 
+                    {% csrf_token %} 
+                    
+                    <div class="mb-4"> 
+                        <label class="form-label fw-semibold text-secondary small mb-2">Archivo Excel (.xlsx o .xls)</label> 
+                        
+                        <!-- Zona Drag and Drop Mejorada -->
+                        <div id="dropZone" class="border border-2 border-dashed rounded-4 p-4 text-center bg-light position-relative transition-all" style="cursor: pointer; border-color: #cbd5e1 !important;">
+                            <input type="file" name="archivo_excel" id="archivo_excel" accept=".xlsx, .xls" required class="position-absolute top-0 start-0 w-100 h-100 opacity-0" style="cursor: pointer;">
+                            
+                            <div id="dropZonePrompt">
+                                <i class="bi bi-cloud-arrow-up text-primary display-4 mb-2 d-block" style="color: #4f46e5 !important;"></i>
+                                <p class="mb-1 fw-medium text-dark">Arrastra tu archivo aquí o <span class="text-primary" style="color: #4f46e5 !important;">examina</span></p>
+                                <p class="text-muted extra-small mb-0" style="font-size: 0.75rem;">Formatos soportados: XLS, XLSX</p>
+                            </div>
+
+                            <!-- Estado de archivo seleccionado (Oculto inicialmente) -->
+                            <div id="fileSelectedInfo" class="d-none align-items-center justify-content-center gap-3">
+                                <div class="bg-success bg-opacity-10 p-2.5 rounded-3 text-success">
+                                    <i class="bi bi-filetype-xlsx fs-3"></i>
+                                </div>
+                                <div class="text-start">
+                                    <p id="fileName" class="fw-semibold text-dark mb-0 text-truncate" style="max-width: 250px; font-size: 0.9rem;">archivo.xlsx</p>
+                                    <p id="fileSize" class="text-muted small mb-0">0 KB</p>
+                                </div>
+                                <button type="button" id="btnRemoveFile" class="btn btn-sm btn-link text-danger text-decoration-none ms-2 p-1" title="Quitar archivo">
+                                    <i class="bi bi-x-circle-fill fs-5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Feedback de error en JS -->
+                        <div id="fileErrorFeedback" class="text-danger small mt-2 d-none">
+                            <i class="bi bi-exclamation-circle-fill me-1"></i> Por favor, selecciona un archivo de Excel válido (.xlsx o .xls).
+                        </div>
+
+                        <div class="form-text text-muted mt-3 d-flex align-items-start gap-1" style="font-size: 0.78rem; line-height: 1.3;"> 
+                            <i class="bi bi-info-circle-fill text-primary" style="color: #4f46e5 !important;"></i> 
+                            <span>Diseñado específicamente para el documento <strong>"PLAN Y PROGRAMA DE CAP MODIFICADO ID 2026"</strong>.</span> 
+                        </div> 
+                    </div> 
+
+                    <div class="d-grid gap-2"> 
+                        <button type="submit" class="btn btn-primary py-2.5 rounded-3 fw-semibold d-flex align-items-center justify-content-center gap-2" style="background-color: #4f46e5; border: none;" id="btnGuardar"> 
+                            <i class="bi bi-cloud-arrow-up-fill fs-5"></i> 
+                            <span>Procesar y Guardar en BD</span> 
+                        </button> 
+                        <a href="{% url 'dashboard' %}" class="btn btn-link text-decoration-none text-secondary py-2 small fw-medium text-center"> 
+                            Cancelar y volver </a> 
+                    </div> 
+                </form> 
+            </div> 
+        </div> 
+    </div> 
+</div> 
+
+<style>
+    /* Efectos visuales de transición para la zona Drop */
+    .transition-all { transition: all 0.2s ease-in-out; }
+    .dragover {
+        background-color: #f0fdf4 !important; /* Fondo verde muy claro */
+        border-color: #22c55e !important; /* Borde verde Bootstrap */
+        transform: scale(1.02);
+    }
+</style>
+
+<script>
+    const fileInput = document.getElementById('archivo_excel');
+    const dropZone = document.getElementById('dropZone');
+    const dropZonePrompt = document.getElementById('dropZonePrompt');
+    const fileSelectedInfo = document.getElementById('fileSelectedInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const btnRemoveFile = document.getElementById('btnRemoveFile');
+    const fileErrorFeedback = document.getElementById('fileErrorFeedback');
+    const uploadForm = document.getElementById('uploadExcelForm');
+
+    // Cambiar estilos visuales al arrastrar el archivo
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+        }, false);
+    });
+
+    // Capturar cuando cambie el input del archivo (vía Drag o vía Click)
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            const file = files[0];
+            const extension = file.name.split('.').pop().toLowerCase();
+            
+            // Validar extensión
+            if (extension === 'xlsx' || extension === 'xls') {
+                fileErrorFeedback.classList.add('d-none');
+                fileName.textContent = file.name;
+                fileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
+                
+                // Switch visual de carga
+                dropZonePrompt.classList.add('d-none');
+                fileSelectedInfo.classList.remove('d-none');
+                fileSelectedInfo.classList.add('d-flex');
+            } else {
+                // Archivo inválido
+                clearFileInput();
+                fileErrorFeedback.classList.remove('d-none');
+            }
+        }
+    }
+
+    // Botón para remover el archivo seleccionado
+    btnRemoveFile.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation(); // Evita abrir el explorador de archivos otra vez
+        clearFileInput();
+    });
+
+    function clearFileInput() {
+        fileInput.value = '';
+        dropZonePrompt.classList.remove('d-none');
+        fileSelectedInfo.classList.add('d-none');
+        fileSelectedInfo.classList.remove('d-flex');
+    }
+
+    // Efecto de carga en el Botón Submit original
+    uploadForm.addEventListener('submit', function() {
+        const btn = document.getElementById('btnGuardar');
+        btn.disabled = true;
+        btn.style.backgroundColor = '#6366f1'; 
+        btn.innerHTML = ` 
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 
+            <span>Mapeando columnas y guardando registros...</span> 
+        `; 
+    });
+</script>
+{% endblock %}

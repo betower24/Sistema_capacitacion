@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <h4 class="fw-bold text-dark">Captura Manual - Formato STPS</h4>
+        <p class="text-muted small m-0">Ingresa los datos del trabajador de forma individual para el catálogo regulatorio.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="?descargar=true" class="btn btn-success rounded-3 shadow-sm border-0 d-flex align-items-center gap-1" style="background-color: #10b981;">
+            <i class="bi bi-file-earmark-excel"></i> Descargar Base Actual
+        </a>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary rounded-3">
+            Volver al Panel
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-success alert-dismissible fade show rounded-3 border-0 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="card border-0 bg-white p-4 rounded-4 shadow-sm border col-12 col-xl-10 mx-auto">
+    <form method="POST" class="needs-validation">
+        {% csrf_token %}
+        
+        <h5 class="text-dark fw-bold border-bottom pb-2 mb-3" style="font-size: 1rem; color: #1e293b;">Datos de la Plantilla Regulatoria</h5>
+        
+        <div class="row g-3">
+            {% for field in form %}
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold text-secondary mb-1">
+                        {{ field.label }} {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                    </label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="text-danger xsmall mt-1">{{ field.errors|striptags }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            <button type="reset" class="btn btn-light rounded-3 px-4">Limpiar Formulario</button>
+            <button type="submit" class="btn btn-primary rounded-3 px-4 border-0 shadow-sm" style="background-color: #0891b2;">
+                <i class="bi bi-person-plus-fill me-1"></i> Registrar y Guardar
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
