@@ -208,12 +208,13 @@ class AreaTematica(models.Model):
         verbose_name = "Área Temática"
         verbose_name_plural = "Áreas Temáticas"
         db_table = "core_areatematica" # Forzamos el nombre exacto de la tabla en SQLite
-
 from django.db import models
 
 class CatalogoOcupacion(models.Model):
-    clave = models.CharField(max_length=10, unique=True)
-    descripcion = models.CharField(max_length=255)
+    # 'clave' almacenará el número correlativo del Excel (1, 2, 3...)
+    clave = models.CharField(max_length=20, unique=True)
+    # 'descripcion' guardará el bloque completo ("111010100 - CORTADOR DE PASTO")
+    descripcion = models.CharField(max_length=500)
 
     def __str__(self):
         return f"{self.clave} - {self.descripcion}"

@@ -1118,11 +1118,12 @@ from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .models import CatalogoOcupacion
-
-
 @login_required
 def cargar_ocupaciones(request):
-
+    """
+    Sube el Excel de Ocupaciones. Guarda la clave secuencial (1, 2, 3...)
+    y el bloque descriptivo completo sin recortar nada.
+    """
     if not request.user.is_staff:
         return HttpResponse("Acceso denegado", status=403)
 
@@ -1131,53 +1132,55 @@ def cargar_ocupaciones(request):
 
         try:
             dict_excel = pd.read_excel(excel_file, sheet_name=None)
-
-            # Buscar hoja
             nombre_pestana = next(
                 (sheet for sheet in dict_excel.keys() if 'ocupa' in sheet.lower()),
                 list(dict_excel.keys())[0]
             )
-
             df = dict_excel[nombre_pestana]
+            df.dropna(how='all', inplace=True)
             df.columns = [str(col).strip().lower() for col in df.columns]
 
-            # Detectar columnas
             col_clave = next((c for c in df.columns if 'clave' in c or 'id' in c or 'cod' in c), None)
             col_desc = next((c for c in df.columns if 'desc' in c or 'nombre' in c or 'ocupa' in c), None)
 
             if not col_clave or not col_desc:
-                messages.error(request, f"El Excel (Hoja: '{nombre_pestana}') debe tener columna clave y descripción.")
+                messages.error(request, f"Error: No se detectaron las columnas requeridas en la hoja '{nombre_pestana}'.")
                 return render(request, 'core/cargar_ocupaciones.html')
 
             contador = 0
 
             for _, fila in df.iterrows():
-
-                clave_valor = str(fila[col_clave]).strip().upper()
-                descripcion_valor = str(fila[col_desc]).strip().upper()
-
-                if pd.isna(fila[col_clave]) or clave_valor.lower() == 'nan' or not clave_valor:
+                val_original_clave = fila[col_clave]
+                val_original_desc = fila[col_desc]
+                
+                if pd.isna(val_original_clave) or pd.isna(val_original_desc): 
                     continue
 
-                # 🔥 LIMPIEZA CLAVE (CRÍTICO)
-                clave_valor = clave_valor.replace(" ", "").replace("\t", "")
-
-                if clave_valor.endswith(".0"):
+                # Forzar a string y limpiar el número secuencial (ej: "1", "2")
+                clave_valor = str(val_original_clave).strip()
+                if clave_valor.endswith('.0'): 
                     clave_valor = clave_valor[:-2]
+                clave_valor = clave_valor.replace(" ", "")
 
-                print("GUARDANDO:", clave_valor, "->", descripcion_valor)
+                # Guardar el texto completo tal cual viene en el Excel ("111010100 - CORTADOR DE PASTO")
+                descripcion_valor = str(val_original_desc).strip()
 
+                if not clave_valor or clave_valor.lower() == 'nan' or not descripcion_valor or descripcion_valor.lower() == 'nan': 
+                    continue
+
+                # 💾 Guardado directo en la Base de Datos
                 CatalogoOcupacion.objects.update_or_create(
                     clave=clave_valor,
-                    defaults={'descripcion': descripcion_valor}
+                    defaults={
+                        'descripcion': descripcion_valor.upper().strip()
+                    }
                 )
-
                 contador += 1
 
-            messages.success(request, f"✔ {contador} ocupaciones cargadas correctamente.")
+            messages.success(request, f"¡Catálogo cargado con éxito! Se guardaron {contador} registros.")
             return redirect('cargar_ocupaciones')
 
         except Exception as e:
-            messages.error(request, f"Error al procesar ocupaciones: {str(e)}")
+            messages.error(request, f"Error crítico al procesar Ocupaciones: {str(e)}")
 
     return render(request, 'core/cargar_ocupaciones.html')
