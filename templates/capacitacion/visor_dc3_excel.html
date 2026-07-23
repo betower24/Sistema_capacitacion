@@ -3,147 +3,147 @@
 
 {% block content %}
 
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<div class="container my-5">
 
-<div class="container mt-4">
-
-    <!-- HEADER -->
-    <div class="card p-4 shadow-sm border-0 mb-4" style="border-radius: 20px;">
-        <div class="row align-items-center">
-            <div class="col-md-7">
-                <h3 class="fw-bold text-dark">
-                    <i class="bi bi-file-earmark-word-fill text-primary"></i>
-                    Automatización de Formato DC-3 Word (.docx)
-                </h3>
-                <p class="text-muted mb-0">
-                    Localiza empleados en SQLite y genera automáticamente el formato oficial DC-3 en Word listo para impresión.
-                </p>
+    <!-- Header -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+        <div class="card-body p-5" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white;">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h2 class="fw-bold mb-2">
+                        <i class="bi bi-file-earmark-word-fill me-3"></i>
+                        Automatización DC-3
+                    </h2>
+                    <p class="lead opacity-90 mb-0">
+                        Genera automáticamente el formato oficial STPS (DC-3) en Word a partir de los registros en el sistema.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
+                    <a href="{% url 'dashboard' %}" class="btn btn-light">
+                        <i class="bi bi-arrow-left"></i> Volver al Dashboard
+                    </a>
+                </div>
             </div>
-            <div class="col-md-5 text-md-end mt-3 mt-md-0">
-                <a href="{% url 'dashboard' %}" class="btn btn-secondary" style="border-radius: 10px;">
-                    Volver al Dashboard
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="card shadow-sm border-0 rounded-4 mb-5">
+        <div class="card-body p-4">
+            <label class="form-label fw-semibold text-secondary mb-2">
+                Buscar Empleado
+            </label>
+            <div class="input-group input-group-lg">
+                <span class="input-group-text bg-white">
+                    <i class="bi bi-search text-primary"></i>
+                </span>
+                <input type="text" id="buscar_trabajador" 
+                       class="form-control border-0 shadow-none" 
+                       placeholder="Escribe nombre o CURP...">
+            </div>
+            <small class="text-muted">Mínimo 2 caracteres para buscar</small>
+        </div>
+    </div>
+
+    <!-- Mensaje de Error -->
+    {% if error_horas %}
+    <div class="alert alert-danger border-0 shadow-sm rounded-4 p-4 text-center">
+        <i class="bi bi-exclamation-triangle-fill fs-1 text-danger d-block mb-3"></i>
+        <h5 class="fw-bold">No cumple con el mínimo de horas</h5>
+        <p class="mb-0">
+            El trabajador <strong>{{ nombre_completo }}</strong> solo tiene 
+            <strong>{{ registro.duracion }} horas</strong> (mínimo requerido: 40 horas).
+        </p>
+    </div>
+
+    <!-- Resultado Exitoso -->
+    {% elif registro %}
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-5">
+            <div class="d-flex align-items-center mb-4">
+                <i class="bi bi-check-circle-fill text-success fs-1 me-3"></i>
+                <div>
+                    <h4 class="fw-bold text-success mb-1">Empleado Encontrado</h4>
+                    <p class="text-muted mb-0">Datos listos para generar el formato DC-3</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="text-muted small">Nombre Completo</label>
+                    <p class="fs-5 fw-semibold">{{ nombre_completo }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small">CURP</label>
+                    <p class="fs-5 fw-semibold">{{ registro.curp }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small">Curso</label>
+                    <p class="fw-medium">{{ registro.nombre_curso }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small">Duración Validada</label>
+                    <span class="badge bg-success fs-5 px-3 py-2">
+                        {{ registro.duracion }} horas
+                    </span>
+                </div>
+            </div>
+
+            <div class="text-end mt-5 pt-4 border-top">
+                <a href="{% url 'descargar_dc3_relleno' registro.id %}" 
+                   id="btnDescargar"
+                   class="btn btn-primary btn-lg px-5 py-3 shadow-sm d-inline-flex align-items-center gap-3">
+                    <i class="bi bi-file-earmark-word-fill fs-4"></i>
+                    <span>Generar y Descargar DC-3 (.docx)</span>
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- BUSCADOR -->
-    <div class="card p-4 shadow-sm border-0 mb-4" style="border-radius: 15px;">
-        <label class="form-label fw-bold text-secondary">
-            Escribe el nombre del empleado:
-        </label>
-
-        <div class="input-group">
-            <span class="input-group-text bg-white border-end-0">
-                <i class="bi bi-search text-muted"></i>
-            </span>
-            <input type="text" id="buscar_trabajador"
-                   class="form-control border-start-0 py-2"
-                   placeholder="Ej. Juan Pérez...">
-        </div>
-    </div>
-
-    <!-- ERROR HORAS -->
-    {% if error_horas %}
-    <div class="alert alert-danger text-center p-4 shadow-sm" style="border-radius: 12px;">
-        <i class="bi bi-exclamation-octagon-fill fs-3 d-block mb-2"></i>
-        <strong>Criterio Normativo Insuficiente</strong><br>
-        El trabajador fue localizado, pero solo cuenta con {{ registro.duracion }} horas registradas (mínimo 40 horas).
-    </div>
-
-    <!-- RESULTADO -->
-    {% elif registro %}
-    <div class="card p-4 shadow-sm border-start border-success border-5" style="border-radius: 15px;">
-
-        <h5 class="fw-bold text-success mb-3">
-            <i class="bi bi-check-circle-fill"></i>
-            Datos listos para generar Word DC-3
-        </h5>
-
-        <div class="row g-3">
-            <div class="col-md-6">
-                <small class="text-muted">Nombre</small>
-                <p class="fw-bold fs-5">{{ nombre_completo }}</p>
-            </div>
-
-            <div class="col-md-6">
-                <small class="text-muted">CURP</small>
-                <p class="fw-bold fs-5">{{ registro.curp }}</p>
-            </div>
-
-            <div class="col-md-6">
-                <small class="text-muted">Curso</small>
-                <p class="fw-bold text-primary">{{ registro.nombre_curso }}</p>
-            </div>
-
-            <div class="col-md-6">
-                <small class="text-muted">Horas</small><br>
-                <span class="badge bg-success fs-6">
-                    {{ registro.duracion }} horas validadas
-                </span>
-            </div>
-        </div>
-
-        <!-- BOTÓN DESCARGA -->
-        <div class="text-end mt-4 pt-3 border-top">
-
-            <a href="{% url 'descargar_dc3_relleno' registro.id %}"
-               id="btnDescargar"
-               class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2"
-               style="border-radius: 12px; font-weight: 600;">
-
-                <i class="bi bi-file-earmark-word-fill"></i>
-                Generar y Descargar Word DC-3
-            </a>
-
-        </div>
-    </div>
-
-    <!-- VACÍO -->
+    <!-- Estado Inicial -->
     {% else %}
-    <div class="text-center p-5 border bg-light shadow-sm"
-         style="border-radius: 20px; border-style: dashed !important;">
-        <i class="bi bi-file-earmark-arrow-up text-muted fs-1 d-block mb-3"></i>
-        <h5 class="text-muted">Esperando selección de personal</h5>
-        <p class="text-muted small">
-            Busca un empleado para generar su formato DC-3 en Word.
-        </p>
+    <div class="text-center py-5">
+        <div class="mx-auto" style="max-width: 380px;">
+            <i class="bi bi-search text-muted fs-1 mb-4 d-block"></i>
+            <h5 class="text-muted">Busca un empleado para comenzar</h5>
+            <p class="text-muted">
+                Escribe el nombre o CURP para localizar sus datos y generar el formato DC-3.
+            </p>
+        </div>
     </div>
     {% endif %}
+
 </div>
 
-<!-- AUTOCOMPLETE -->
+<!-- jQuery + jQuery UI para Autocomplete -->
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 
 <script>
-$(function () {
+$(function() {
     $("#buscar_trabajador").autocomplete({
         source: "{% url 'visor_dc3_excel' %}",
         minLength: 2,
-        select: function (event, ui) {
+        select: function(event, ui) {
             window.location.href = "?empleado_id=" + ui.item.id;
         }
     });
 
-    // SWEETALERT AL DESCARGAR
-    $("#btnDescargar").on("click", function (e) {
+    // SweetAlert al descargar
+    $("#btnDescargar").on("click", function(e) {
         e.preventDefault();
-
         const url = $(this).attr("href");
 
         Swal.fire({
-            title: "Generando documento Word",
-            text: "Se está creando el formato DC-3...",
-            icon: "info",
+            title: 'Generando documento...',
+            text: 'Por favor espera un momento',
+            icon: 'info',
             allowOutsideClick: false,
             showConfirmButton: false,
-            timer: 1200,
-            didClose: () => {
-                window.location.href = url;
-            }
+            timer: 1500
+        }).then(() => {
+            window.location.href = url;
         });
     });
 });

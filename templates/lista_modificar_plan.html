@@ -1,47 +1,174 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4>Modificar Registros del Plan Captura</h4>
-        <p class="text-muted small m-0">Selecciona el registro del personal que deseas corregir o actualizar.</p>
+<style>
+    .page-header {
+        background: white;
+        padding: 28px 0;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 30px;
+        border-radius: 16px;
+    }
+
+    .page-title {
+        font-size: 1.85rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: #0f172a;
+    }
+
+    .search-container {
+        max-width: 420px;
+    }
+
+    .search-input {
+        border-radius: 12px;
+        border: 1.5px solid #e2e8f0;
+        padding: 12px 20px 12px 48px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        outline: none;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+
+    .table thead th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        padding: 16px 12px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .table tbody tr {
+        transition: all 0.25s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8fafc;
+        transform: scale(1.01);
+    }
+
+    .badge-area {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+
+    .btn-modificar {
+        border-radius: 10px;
+        padding: 8px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-modificar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(79, 70, 229, 0.25);
+    }
+
+    .no-results {
+        padding: 60px 20px;
+        text-align: center;
+        color: #64748b;
+    }
+</style>
+
+<div class="page-header">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h4 class="page-title mb-1">Modificar Registros del Plan Captura</h4>
+            <p class="text-muted m-0">Selecciona el registro que deseas actualizar o corregir.</p>
+        </div>
+        
+        <!-- Buscador por Nómina -->
+        <div class="search-container position-relative">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-4 text-muted"></i>
+            <input type="text" 
+                   id="searchInput" 
+                   class="form-control search-input" 
+                   placeholder="Buscar por Nómina o Nombre...">
+        </div>
     </div>
 </div>
 
-<div class="table-responsive bg-white p-3 rounded-4 shadow-sm border">
-    <table class="table table-hover align-middle m-0">
-        <thead class="table-light">
-            <tr>
-                <th>Nómina / ID</th>
-                <th>Nombre del Personal</th>
-                <th>Área / Puesto</th>
-                <th class="text-center">Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for reg in registros %}
-            <tr>
-                <td class="fw-bold text-secondary">#{{ reg.nomina }}</td>
-                
-                <td class="fw-semibold text-dark">{{ reg.nombre_trabajador }}</td>
-                
-                <td>
-                    <span class="badge bg-light text-dark border mb-1 d-inline-block">{{ reg.puesto|default:"General" }}</span>
-                    <small class="text-muted d-block" style="font-size: 0.75rem;">Área: {{ reg.area|default:"Sin área" }}</small>
-                </td>
-                
-                <td class="text-center">
-                    <a href="{% url 'editar_registro_plan' reg.pk %}" class="btn btn-sm btn-primary px-3 rounded-3 shadow-sm" style="background-color: #4f46e5; border: none;">
-                        <i class="bi bi-pencil me-1"></i> Modificar
-                    </a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="4" class="text-center text-muted py-4">No se encontraron registros capturados.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="table-container">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="registrosTable">
+            <thead>
+                <tr>
+                    <th width="15%">Nómina / ID</th>
+                    <th>Nombre del Personal</th>
+                    <th>Área / Puesto</th>
+                    <th width="12%" class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reg in registros %}
+                <tr class="registro-row" data-nomina="{{ reg.nomina }}" data-nombre="{{ reg.nombre_trabajador|lower }}">
+                    <td class="fw-bold text-secondary">#{{ reg.nomina }}</td>
+                    
+                    <td class="fw-semibold">{{ reg.nombre_trabajador }}</td>
+                    
+                    <td>
+                        <span class="badge bg-light text-dark border badge-area">
+                            {{ reg.puesto|default:"Sin puesto" }}
+                        </span>
+                        <small class="text-muted d-block mt-1">
+                            Área: {{ reg.area|default:"No especificada" }}
+                        </small>
+                    </td>
+                    
+                    <td class="text-center">
+                        <a href="{% url 'editar_registro_plan' reg.pk %}" 
+                           class="btn btn-primary btn-sm btn-modificar">
+                            <i class="bi bi-pencil me-1"></i> Modificar
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="no-results">
+                        <i class="bi bi-inbox display-4 mb-3 d-block"></i>
+                        <p class="mb-0">No se encontraron registros capturados.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<script>
+    // Buscador en tiempo real
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('.registro-row');
+
+        rows.forEach(row => {
+            const nomina = row.getAttribute('data-nomina').toLowerCase();
+            const nombre = row.getAttribute('data-nombre');
+            
+            if (nomina.includes(searchTerm) || nombre.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+</script>
+
 {% endblock %}

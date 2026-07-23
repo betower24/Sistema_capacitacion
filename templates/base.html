@@ -15,182 +15,131 @@
 
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-light: #6366f1;
-            --primary-dark: #3730a3;
+            --primary: #1e40af;
+            --primary-light: #3b82f6;
+            --primary-dark: #1e3a8a;
+            --accent: #64748b;
             --surface: #ffffff;
             --background: #f8fafc;
             --text-main: #0f172a;
             --text-muted: #64748b;
-            --border-color: rgba(226, 232, 240, 0.7);
+            --border-color: #e2e8f0;
         }
 
         body {
             background-color: var(--background);
-            /* Gradiente orgánico inmersivo estilo Dashboard Moderno */
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(243, 244, 255, 1) 0px, transparent 45%),
-                radial-gradient(at 50% 0%, rgba(224, 231, 255, 0.5) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(245, 243, 255, 0.8) 0px, transparent 45%);
-            background-attachment: fixed;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             color: var(--text-main);
             min-height: 100vh;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* NAVBAR CON DESENFOQUE CRISTALINO (GLASSMORPHISM EFFECT) */
+        /* NAVBAR PROFESIONAL */
         .custom-navbar {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.5);
-            padding: 14px 0;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             z-index: 1030;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .navbar-brand {
-            font-weight: 800;
-            font-size: 1.2rem;
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: -0.03em;
             color: var(--text-main);
-            letter-spacing: -0.025em;
-            transition: opacity 0.2s ease;
-        }
-
-        .navbar-brand:hover {
-            opacity: 0.9;
-            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .brand-icon {
             color: var(--primary);
-            background: linear-gradient(135deg, var(--primary-light), var(--primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 1.65rem;
         }
 
-        .navbar-brand:hover .brand-icon {
-            transform: scale(1.12) rotate(-5deg);
-        }
-
-        /* CARD DE PERFIL UNIFICADA */
+        /* Perfil de Usuario */
         .user-profile-card {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 5px 5px 5px 16px;
-            border-radius: 100px;
+            background: white;
+            padding: 6px 8px 6px 18px;
+            border-radius: 50px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.02);
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease;
         }
 
         .user-profile-card:hover {
-            background: #ffffff;
-            border-color: rgba(79, 70, 229, 0.25);
-            box-shadow: 0 12px 20px -5px rgba(79, 70, 229, 0.08);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+            border-color: #cbd5e1;
         }
 
-        /* DISEÑO DE BOTONES DE ACCIÓN */
         .btn-app-secondary {
-            background: #ffffff;
-            color: var(--text-muted);
-            border: 1px solid #e2e8f0;
-            border-radius: 100px;
+            border-radius: 50px;
             font-weight: 600;
-            padding: 6px 14px;
-            font-size: 0.85rem;
-            transition: all 0.2s ease;
-        }
-
-        .btn-app-secondary:hover {
-            background: #f8fafc;
-            color: var(--primary);
-            border-color: var(--primary-light);
+            padding: 8px 18px;
+            font-size: 0.9rem;
         }
 
         .btn-app-danger {
-            background: #fef2f2;
-            color: #ef4444;
-            border: 1px solid #fee2e2;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            width: 34px;
-            height: 34px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
-            padding: 0;
+            background: #fef2f2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
         }
 
         .btn-app-danger:hover {
             background: #ef4444;
-            color: #ffffff;
-            border-color: #ef4444;
-            box-shadow: 0 6px 15px rgba(239, 68, 68, 0.2);
+            color: white;
         }
 
         .user-avatar {
-            width: 34px;
-            height: 34px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-light), #a855f7);
+            background: linear-gradient(135deg, var(--primary), #1e40af);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 0.8rem;
-            letter-spacing: 0.02em;
-            box-shadow: 0 4px 8px rgba(99, 102, 241, 0.15);
+            font-size: 0.95rem;
+            box-shadow: 0 2px 8px rgba(30, 64, 175, 0.25);
         }
 
-        /* CONTENEDOR DE LA APLICACIÓN (ANIMACIÓN SUAVE SEDA) */
+        /* Contenedor Principal */
         .app-container {
-            margin-top: 30px;
-            margin-bottom: 50px;
-            padding: 35px;
-            border-radius: 24px;
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            box-shadow: 
-                0 4px 30px rgba(0, 0, 0, 0.01),
-                0 20px 40px -4px rgba(15, 23, 42, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            
-            /* Animación optimizada sin brincos de render */
-            opacity: 0;
-            transform: translateY(10px);
-            animation: appContainerFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes appContainerFadeIn {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Ajustes Mobile Responsivo */
-        @media (max-width: 768px) {
-            .app-container {
-                padding: 20px;
-                margin-top: 15px;
-                border-radius: 16px;
-            }
-            .user-profile-card {
-                padding: 4px;
-            }
+            margin-top: 40px;
+            margin-bottom: 60px;
+            padding: 42px;
+            background: white;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            min-height: 70vh;
         }
 
         .app-container h4 {
-            font-weight: 800;
-            font-size: 1.5rem;
+            font-weight: 700;
             color: var(--text-main);
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 28px 20px;
+                margin-top: 20px;
+            }
+            .user-profile-card {
+                padding: 5px 6px 5px 14px;
+            }
         }
     </style>
 </head>
@@ -198,103 +147,84 @@
 <body>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        {% if messages %}
-            {% for message in messages %}
-                // Determinamos el tipo de ícono de SweetAlert basado en la etiqueta de Django
-                let tipoIcono = 'info'; 
-                {% if message.tags == 'success' %}
-                    tipoIcono = 'success';
-                {% elif message.tags == 'error' or message.tags == 'danger' %}
-                    tipoIcono = 'error';
-                {% elif message.tags == 'warning' %}
-                    tipoIcono = 'warning';
-                {% endif %}
+    <!-- Navbar -->
+    <nav class="navbar custom-navbar sticky-top">
+        <div class="container container-xl">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-person-workspace brand-icon"></i>
+                <span>Sistema de Capacitación</span>
+            </a>
 
-                // Disparamos la alerta emergente animada
-                Swal.fire({
-                    title: tipoIcono === 'success' ? '¡Éxito!' : 'Oops...',
-                    text: "{{ message|escapejs }}",
-                    icon: tipoIcono,
-                    confirmButtonColor: '#3085d6',
-                    confirmButtonText: 'Entendido',
-                    timer: tipoIcono === 'success' ? 3500 : null, // Si es éxito, se cierra sola en 3.5 segundos
-                    timerProgressBar: tipoIcono === 'success' ? true : false
-                });
-            {% endfor %}
-        {% endif %}
-    });
-</script>
+            <div class="ms-auto d-flex align-items-center gap-3">
+                {% if user.is_authenticated %}
+                <div class="user-profile-card d-flex align-items-center gap-3">
+                    <span class="text-muted d-none d-md-inline fw-medium">
+                        Hola, <span class="text-dark">{{ user.get_full_name|default:user.username }}</span>
+                    </span>
 
-<nav class="navbar custom-navbar sticky-top">
-    <div class="container container-xl">
-        <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-            <i class="bi bi-person-workspace fs-4 brand-icon"></i>
-            <span>Sistema de Capacitación</span>
-        </a>
+                    <a href="{% url 'dashboard' %}" class="btn btn-app-secondary d-flex align-items-center gap-2">
+                        <i class="bi bi-grid-1x2"></i>
+                        <span class="d-none d-sm-inline">Panel</span>
+                    </a>
 
-        <div class="ms-auto d-flex align-items-center">
-            {% if user.is_authenticated %}
-            <div class="d-flex align-items-center gap-2 gap-md-3 user-profile-card">
-                <span class="text-muted d-none d-md-inline" style="font-size: 0.85rem; font-weight: 500;">
-                    Hola, <span class="text-dark fw-semibold">{{ user.get_full_name|default:user.username }}</span>
-                </span>
+                    <form action="{% url 'logout' %}" method="post" id="logoutForm" class="m-0">
+                        {% csrf_token %}
+                        <button type="button" onclick="confirmarSalida()" class="btn btn-app-danger">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </form>
 
-                <a href="{% url 'dashboard' %}" class="btn btn-app-secondary d-flex align-items-center gap-1">
-                    <i class="bi bi-grid-1x2"></i> <span class="d-none d-sm-inline">Panel</span>
-                </a>
-
-                <form action="{% url 'logout' %}" method="post" id="logoutForm" class="m-0">
-                    {% csrf_token %}
-                    <button type="button" onclick="confirmarSalida()" class="btn btn-app-danger">
-                        <i class="bi bi-box-arrow-right"></i>
-                    </button>
-                </form>
-
-                <div class="user-avatar d-none d-sm-flex">
-                    {{ user.username|slice:":2"|upper }}
+                    <div class="user-avatar d-none d-sm-flex">
+                        {{ user.username|slice:":2"|upper }}
+                    </div>
                 </div>
+                {% endif %}
             </div>
-            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container container-xl">
+        <div class="app-container">
+            {% block content %}
+            <h4>Dashboard</h4>
+            <p class="text-muted">Bienvenido al sistema.</p>
+            {% endblock %}
         </div>
     </div>
-</nav>
 
-<div class="container container-xl">
-    <div class="app-container">
-        {% block content %}
-        <h4>Dashboard</h4>
-        <p class="text-muted lead">Bienvenido al sistema. Aquí va tu contenido...</p>
-        {% endblock %}
-    </div>
-</div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Mensajes de Django
+        document.addEventListener("DOMContentLoaded", function() {
+            {% if messages %}
+                {% for message in messages %}
+                    Swal.fire({
+                        title: "{% if message.tags == 'success' %}¡Éxito!{% else %}Atención{% endif %}",
+                        text: "{{ message|escapejs }}",
+                        icon: "{% if message.tags == 'success' %}success{% elif message.tags == 'error' or message.tags == 'danger' %}error{% else %}info{% endif %}",
+                        confirmButtonColor: '#1e40af'
+                    });
+                {% endfor %}
+            {% endif %}
+        });
 
-<script>
-function confirmarSalida() {
-    Swal.fire({
-        title: '¿Cerrar sesión?',
-        text: "Tendrás que volver a ingresar tus credenciales para acceder al sistema.",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#94a3b8',
-        confirmButtonText: 'Sí, salir',
-        cancelButtonText: 'Permanecer',
-        background: '#ffffff',
-        customClass: {
-            popup: 'rounded-4 shadow-lg border-0 p-3'
+        function confirmarSalida() {
+            Swal.fire({
+                title: '¿Cerrar sesión?',
+                text: "Se cerrará la sesión actual.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sí, salir',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logoutForm').submit();
+                }
+            });
         }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            document.getElementById('logoutForm').submit();
-        }
-    });
-}
-</script>
-
+    </script>
 </body>
 </html>

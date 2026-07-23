@@ -1,70 +1,173 @@
 {% extends 'base.html' %}
+
 {% block content %}
+<style>
+    body {
+        background-color: #f8fafc;
+    }
 
-<div class="row justify-content-center align-items-center" style="min-height: 65vh;">
-    <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+    .login-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+    }
+
+    .login-card {
+        width: 100%;
+        max-width: 400px;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.09);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    .login-header {
+        background-color: #1e2937;
+        padding: 38px 32px 32px;
+        text-align: center;
+    }
+
+    .login-header .brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        color: white;
+        margin-bottom: 8px;
+    }
+
+    .login-header .brand-icon {
+        font-size: 1.85rem;
+        color: #60a5fa;
+    }
+
+    .login-header h4 {
+        color: white;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: -0.02em;
+    }
+
+    .login-header p {
+        color: #94a3b8;
+        font-size: 0.95rem;
+        margin: 6px 0 0;
+    }
+
+    .login-body {
+        padding: 40px 36px 44px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+    }
+
+    .form-control {
+        border: 1.5px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 1rem;
+        transition: all 0.25s ease;
+    }
+
+    .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px hsl(240, 4%, 89%);
+        outline: none;
+    }
+
+    .btn-login {
+        background-color: hsl(226, 47%, 69%);
+        color: white;
+        font-weight: 600;
+        padding: 13px;
+        font-size: 1.02rem;
+        border-radius: 8px;
+        border: none;
+        width: 100%;
+        margin-top: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-login:hover {
+        background-color: hsl(224, 66%, 69%);
+        transform: translateY(-1px);
+    }
+
+    .errorlist { display: none; }
+</style>
+
+<div class="login-wrapper">
+    <div class="login-card">
         
-        <div class="card shadow border-0 rounded-4 p-4 p-sm-5 bg-white">
-            <div class="text-center mb-4">
-                <div class="bg-primary bg-gradient text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
-                    🔒
-                </div>
-                <h3 class="fw-bold text-dark m-0">Iniciar Sesión</h3>
-                <p class="text-muted small">Ingresa tus credenciales para acceder</p>
+        <!-- Header -->
+        <div class="login-header">
+            <div class="brand">
+                <i class="bi bi-person-workspace brand-icon"></i>
+                <h4>Sistema de Capacitación</h4>
             </div>
-
-            <form method="post" autocomplete="off">
-                {% csrf_token %}
-                
-                <div class="django-form-fields mb-4">
-                    {{ form.as_p }}
-                </div>
-
-                <button type="submit" class="btn btn-primary bg-gradient w-100 py-2 fw-bold shadow-sm rounded-3">
-                    Ingresar al Sistema
-                </button>
-            </form>
+            <p>Gestión capacitacion y adiestramineto y productividad </p>
         </div>
 
+        <!-- Formulario -->
+        <div class="login-body">
+            <form method="post" autocomplete="off">
+                {% csrf_token %}
+
+                <div class="mb-4">
+                    {{ form.username.label_tag }}
+                    {{ form.username }}
+                </div>
+
+                <div class="mb-4">
+                    {{ form.password.label_tag }}
+                    {{ form.password }}
+                </div>
+
+                {% if form.errors or form.non_field_errors %}
+                    <div class="alert alert-danger py-3 mb-4 text-center">
+                        <small><i class="bi bi-exclamation-circle me-2"></i> Usuario o contraseña incorrectos</small>
+                    </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-login">
+                    Iniciar Sesión
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    Para soporte técnico contacte al administrador del sistema.
+                </small>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Estilizar los párrafos e inputs automáticos de Django
-        const inputs = document.querySelectorAll('.django-form-fields input');
-        const paragraphs = document.querySelectorAll('.django-form-fields p');
+        // Mejorar apariencia de los campos de Django
+        const inputs = document.querySelectorAll('.login-body input');
+        inputs.forEach(input => {
+            input.classList.add('form-control');
+        });
 
-        paragraphs.forEach(p => p.classList.add('mb-3'));
-        inputs.forEach(input => input.classList.add('form-control', 'py-2'));
-
-        // DETECCIÓN: Alerta de error si el login falla en el backend
         {% if form.errors or form.non_field_errors %}
             Swal.fire({
                 icon: 'error',
-                title: 'Usuario Desconocido',
-                text: 'Las credenciales ingresadas no pertenecen a ningún usuario registrado.',
-                confirmButtonColor: '#dc3545',
-                confirmButtonText: 'Intentar de nuevo'
+                title: 'Acceso Denegado',
+                text: 'Verifique sus credenciales e intente nuevamente.',
+                confirmButtonColor: '#1e40af',
+                confirmButtonText: 'Aceptar'
             });
         {% endif %}
     });
 </script>
-
-<style>
-    .django-form-fields label {
-        display: block;
-        margin-bottom: 0.4rem;
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: #495057;
-    }
-    .form-control:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
-    }
-    /* Oculta la lista nativa de texto de errores de Django para no duplicar el SweetAlert */
-    .errorlist { display: none; }
-</style>
 
 {% endblock %}

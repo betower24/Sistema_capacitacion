@@ -2,13 +2,16 @@
 {% block content %}
 
 <div class="row g-4">
+    <!-- Formulario -->
     <div class="col-12">
-        <div class="card shadow-sm border-0 rounded-3 p-4 bg-white">
-            <div class="d-flex align-items-center mb-2">
-                <span class="fs-4 me-2"></span>
-                <h4 class="fw-bold m-0 text-dark">Programa Real</h4>
+        <div class="card shadow-sm border-0 rounded-4 p-4 bg-white">
+            <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-clipboard-data fs-3 text-primary me-3"></i>
+                <div>
+                    <h4 class="fw-bold m-0 text-dark">Programa Real</h4>
+                    <p class="text-muted small m-0">Ingresa la información correspondiente para guardar un nuevo registro.</p>
+                </div>
             </div>
-            <p class="text-muted small mb-4">Ingresa la información correspondiente para guardar un nuevo registro en el programa.</p>
             
             <form method="post" autocomplete="off">
                 {% csrf_token %}
@@ -17,9 +20,9 @@
                     {{ form.as_p }}
                 </div>
 
-                <div class="d-flex justify-content-end mt-3">
-                    <button type="submit" class="btn btn-success bg-gradient px-4 py-2 fw-bold shadow-sm">
-                        Guardar Registro
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="submit" class="btn btn-success px-5 py-2.5 fw-semibold shadow-sm rounded-3">
+                        <i class="bi bi-save me-2"></i> Guardar Registro
                     </button>
                 </div>
             </form>
@@ -27,20 +30,20 @@
     </div>
 
     <div class="col-12 col-xl-8">
-        <div class="card shadow-sm border-0 rounded-3 p-4 bg-white h-100">
-            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+        <div class="card shadow-sm border-0 rounded-4 p-4 bg-white h-100">
+            <div class="d-flex align-items-center justify-content-between mb-4">
                 <div class="d-flex align-items-center">
-                    <span class="fs-4 me-2"></span>
+                    <i class="bi bi-table fs-4 text-primary me-3"></i>
                     <h5 class="fw-bold m-0 text-dark">Registros Capturados</h5>
                 </div>
-                <span class="badge bg-secondary rounded-pill fs-7 px-3 py-2">
-                    {{ registros|length }} Filas
+                <span class="badge bg-primary rounded-pill px-3 py-2">
+                    {{ registros|length }} Registros
                 </span>
             </div>
 
             <div class="table-responsive">
-                <table class="table table-hover table-striped align-middle m-0 small">
-                    <thead class="table-light text-secondary text-nowrap">
+                <table class="table table-hover align-middle m-0" id="registrosTable">
+                    <thead class="table-light">
                         <tr>
                             <th>No.</th>
                             <th>Nombre</th>
@@ -53,43 +56,43 @@
                             <th>Promotores</th>
                             <th>Admin.</th>
                             <th>Confianza</th>
-                            <th>Total Part.</th>
+                            <th class="text-center">Total Part.</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for reg in registros %}
                         <tr>
                             <td>{{ reg.no }}</td>
-                            <td class="fw-medium text-dark">{{ reg.nombre }}</td>
-                            <td class="text-success fw-medium">${{ reg.importe }}</td>
+                            <td class="fw-medium">{{ reg.nombre }}</td>
+                            <td class="text-success fw-semibold">${{ reg.importe }}</td>
                             <td>{{ reg.tipo_accion }}</td>
                             <td>{{ reg.modalidad }}</td>
-                            <td class="text-nowrap">{{ reg.fecha }}</td>
+                            <td>{{ reg.fecha }}</td>
                             <td>{{ reg.instructor }}</td>
                             <td class="text-center">{{ reg.operativo }}</td>
                             <td class="text-center">{{ reg.promotores }}</td>
                             <td class="text-center">{{ reg.administrativo }}</td>
                             <td class="text-center">{{ reg.confianza }}</td>
-                            <td class="text-center"><strong>{{ reg.total_participantes }}</strong></td>
+                            <td class="text-center fw-bold">{{ reg.total_participantes }}</td>
                         </tr>
                         {% empty %}
                         <tr>
                             <td colspan="12" class="text-center py-5 text-muted">
-                                <div class="fs-2 mb-2"></div>
-                                No hay registros capturados en este programa todavía.
+                                No hay registros capturados aún.
                             </td>
                         </tr>
                         {% endfor %}
 
-                        <tr class="table-dark align-middle text-center font-weight-bold fw-bold">
-                            <td colspan="2" class="text-start ps-3">TOTALES</td>
-                            <td class="text-start">${{ totales.total_importe|default:0 }}</td>
-                            <td colspan="4" class="text-muted text-center">---</td>
-                            <td>{{ totales.total_operativo|default:0 }}</td>
-                            <td>{{ totales.total_promotores|default:0 }}</td>
-                            <td>{{ totales.total_administrativo|default:0 }}</td>
-                            <td>{{ totales.total_confianza|default:0 }}</td>
-                            <td class="table-primary text-dark">{{ total_general_participantes|default:0 }}</td>
+                        <!-- Fila de Totales -->
+                        <tr class="table-success fw-bold">
+                            <td colspan="2" class="text-start">TOTALES</td>
+                            <td>${{ totales.total_importe|default:0 }}</td>
+                            <td colspan="4"></td>
+                            <td class="text-center">{{ totales.total_operativo|default:0 }}</td>
+                            <td class="text-center">{{ totales.total_promotores|default:0 }}</td>
+                            <td class="text-center">{{ totales.total_administrativo|default:0 }}</td>
+                            <td class="text-center">{{ totales.total_confianza|default:0 }}</td>
+                            <td class="text-center">{{ total_general_participantes|default:0 }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -97,120 +100,116 @@
         </div>
     </div>
 
+    <!-- Gráfica -->
     <div class="col-12 col-xl-4">
-        <div class="card shadow-sm border-0 rounded-3 p-4 bg-white h-100 d-flex flex-column justify-content-between">
-            <div>
-                <div class="d-flex align-items-center mb-3 border-bottom pb-2">
-                    <span class="fs-4 me-2"></span>
+        <div class="card shadow-sm border-0 rounded-4 p-4 bg-white h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-pie-chart fs-4 text-primary me-3"></i>
                     <h5 class="fw-bold m-0 text-dark">Distribución de Participantes</h5>
                 </div>
-                <p class="text-muted small">Representación porcentual del total de participantes por puesto.</p>
+                <button onclick="descargarPDF()" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-download"></i> PDF
+                </button>
             </div>
+
+            <p class="text-muted small">Representación por puesto</p>
             
-            <div class="my-auto py-3 mx-auto" style="position: relative; width: 100%; max-width: 280px;">
-                <canvas id="grafica"></canvas>
+            <div class="flex-grow-1 d-flex align-items-center justify-content-center" style="min-height: 280px;">
+                <canvas id="grafica" width="280" height="280"></canvas>
             </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script>
+    let chartInstance;
+
     document.addEventListener("DOMContentLoaded", function() {
-        // Estilizar los inputs y párrafos que crea Django en automático
-        const inputs = document.querySelectorAll('.django-form-fields input, .django-form-fields select, .django-form-fields textarea');
-        const paragraphs = document.querySelectorAll('.django-form-fields p');
-
-        paragraphs.forEach(p => p.classList.add('mb-2', 'w-100'));
-
-        inputs.forEach(input => {
-            if (input.tagName.toLowerCase() === 'select') {
-                input.classList.add('form-select', 'py-2');
-            } else {
-                input.classList.add('form-control', 'py-2');
-            }
+        // Estilizar formulario Django
+        document.querySelectorAll('.django-form-fields input, .django-form-fields select, .django-form-fields textarea').forEach(el => {
+            if (el.tagName === 'SELECT') el.classList.add('form-select', 'py-2');
+            else el.classList.add('form-control', 'py-2');
         });
 
-        // CONFIGURACIÓN DE LA GRÁFICA DE PASTEL (Cambiado a 'pie')
-        new Chart(document.getElementById('grafica'), {
+        // Crear Gráfica
+        chartInstance = new Chart(document.getElementById('grafica'), {
             type: 'pie',
             data: {
                 labels: ['Operativo', 'Promotores', 'Administrativo', 'Confianza'],
                 datasets: [{
-                    label: 'Total General de Participantes',
                     data: [
-                        {{ totales.total_operativo|default:0 }}, 
-                        {{ totales.total_promotores|default:0 }}, 
-                        {{ totales.total_administrativo|default:0 }}, 
+                        {{ totales.total_operativo|default:0 }},
+                        {{ totales.total_promotores|default:0 }},
+                        {{ totales.total_administrativo|default:0 }},
                         {{ totales.total_confianza|default:0 }}
                     ],
-                    backgroundColor: [
-                        'rgba(54, 162, 235, 0.75)',   // Operativo (Azul)
-                        'rgba(255, 206, 86, 0.75)',   // Promotores (Amarillo)
-                        'rgba(75, 192, 192, 0.75)',   // Administrativo (Verde menta)
-                        'rgba(255, 99, 132, 0.75)'    // Confianza (Rosa)
-                    ],
-                    borderColor: [
-                        '#ffffff',
-                        '#ffffff',
-                        '#ffffff',
-                        '#ffffff'
-                    ],
-                    borderWidth: 2
+                    backgroundColor: ['#3b82f6', '#eab308', '#22c55e', '#ec4899'],
+                    borderColor: '#ffffff',
+                    borderWidth: 3
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 12,
-                            font: { size: 11 }
-                        }
-                    }
+                    legend: { position: 'bottom', labels: { padding: 20, font: { size: 12 } } }
                 }
             }
         });
     });
+
+    // Función para descargar la gráfica como PDF
+    function descargarPDF() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(18);
+        pdf.text("Distribución de Participantes - Programa Real", 105, 20, { align: "center" });
+
+        pdf.setFontSize(11);
+        pdf.text("Sistema de Capacitación", 105, 28, { align: "center" });
+
+        // Convertir canvas a imagen
+        const canvas = document.getElementById('grafica');
+        const imgData = canvas.toDataURL('image/png');
+
+        pdf.addImage(imgData, 'PNG', 30, 40, 150, 150);
+
+        pdf.save('Distribucion_Participantes_Programa_Real.pdf');
+    }
 </script>
 
 <style>
-    /* Grid dinámico para el formulario horizontal */
     .horizontal-form-grid {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 1rem;
+        gap: 1.2rem;
     }
-
-    @media (min-width: 576px) {
-        .horizontal-form-grid {
-            grid-template-columns: repeat(2, 1fr);
-            align-items: end;
-        }
+    @media (min-width: 768px) {
+        .horizontal-form-grid { grid-template-columns: repeat(2, 1fr); }
     }
-
     @media (min-width: 992px) {
-        .horizontal-form-grid {
-            grid-template-columns: repeat(4, 1fr); /* 4 campos por fila si la pantalla es muy grande */
-            align-items: end;
-        }
+        .horizontal-form-grid { grid-template-columns: repeat(3, 1fr); }
     }
 
-    .django-form-fields label {
-        display: block;
-        margin-bottom: 0.4rem;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #495057;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .card {
+        transition: transform 0.2s ease;
     }
-    
-    .form-control:focus, .form-select:focus {
-        border-color: #198754;
-        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.15);
+    .card:hover {
+        transform: translateY(-4px);
+    }
+
+    .table th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        color: #475569;
     }
 </style>
 
