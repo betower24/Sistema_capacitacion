@@ -5,31 +5,34 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction, models
-from django.db.models import Sum 
-from django.http import HttpResponse
+from django.db.models import Sum, Q
+from django.http import HttpResponse, JsonResponse
 from django.template.loader import get_template
-from xhtml2pdf import pisa  # Requiere: pip install xhtml2pdf
+from xhtml2pdf import pisa
 
-# Importaciones para el diseño y estilizado profesional del Excel
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from datetime import date,datetime
-# Importaciones de tu App (Modelos y Formularios)
-from .models import PlanCaptura, ProgramaReal, CursoExcel, Capacitacion, Curso, CargaSTPS
-from .forms import CargaSTPSForm, PlanCapturaForm, ProgramaRealForm, CursoExcelForm, CapacitacionForm
+from django.conf import settings
+from io import BytesIO
+import os
+
+from .models import (
+    PlanCaptura, ProgramaReal, CursoExcel, Capacitacion, Curso, 
+    CargaSTPS, AreaTematica
+)
+from .forms import (
+    CargaSTPSForm, PlanCapturaForm, ProgramaRealForm, 
+    CursoExcelForm, CapacitacionForm
+)
+from docxtpl import DocxTemplate
 
 
 # ==========================================
-# FUNCIÓN AUXILIAR: ESTILIZAR REPORTES EXCEL (TODOS LOS CAMPOS DE LA STPS)
+# FUNCIÓN AUXILIAR: ESTILIZAR REPORTES EXCEL
 # ==========================================
 def generar_excel_estilizado(registros_queryset):
-    """
-    Función interna para unificar el diseño visual de las descargas 
-    de Excel de la STPS utilizando los 21 campos exactos de tus especificaciones.
-    """
     if registros_queryset.exists():
         df_exportar = pd.DataFrame(list(registros_queryset))
         
-        # Mapeo y orden exacto de campos del modelo hacia las columnas del Excel final
         columnas_modelo = [
             'curp', 'nombre', 'primer_apellido', 'segundo_apellido', 'clave_estado', 
             'clave_municipio', 'clave_ocupacion', 'clave_niv_estudio', 'clave_doc_probatorio', 
@@ -38,10 +41,8 @@ def generar_excel_estilizado(registros_queryset):
             'clave_modalidad', 'clave_capacitacion', 'clave_establec'
         ]
         
-        # Filtrar solo las columnas que existan en el DataFrame para evitar KeyErrors
         df_exportar = df_exportar[[col for col in columnas_modelo if col in df_exportar.columns]]
         
-        # Renombrar las cabeceras idéntico a las plantillas oficiales de Excel
         df_exportar.columns = [
             'CURP', 'NOMBRE', 'PRIMER APELLIDO', 'SEGUNDO APELLIDO', 'CLAVE ESTADO', 
             'CLAVE MUNICIPIO', 'CLAVE OCUPACION', 'CLAVE NIV ESTUDIO', 'CLAVE DOC PROBATORI', 
@@ -66,7 +67,6 @@ def generar_excel_estilizado(registros_queryset):
         workbook = writer.book
         worksheet = writer.sheets['Base STPS']
         
-        # Definición de Estilos Visuales profesionales
         fuente_titulo = Font(name='Segoe UI', size=14, bold=True, color='0891B2')
         fuente_cabecera = Font(name='Segoe UI', size=11, bold=True, color='FFFFFF')
         fuente_datos = Font(name='Segoe UI', size=10, color='1E293B')
@@ -82,13 +82,11 @@ def generar_excel_estilizado(registros_queryset):
             top=Side(style='thin', color='CBD5E1'), bottom=Side(style='thin', color='CBD5E1')
         )
         
-        # Insertar renglón de título corporativo
         worksheet.insert_rows(1, 2)
         worksheet['A1'] = "REPORTE CONSOLIDADO DE REGISTROS - CATÁLOGO STPS"
         worksheet['A1'].font = fuente_titulo
         worksheet.row_dimensions[1].height = 25
         
-        # Diseñar Fila de Cabecera (Fila 3)
         worksheet.row_dimensions[3].height = 28
         for cell in worksheet[3]:
             cell.font = fuente_cabecera
@@ -96,14 +94,12 @@ def generar_excel_estilizado(registros_queryset):
             cell.alignment = alineacion_centro
             cell.border = borde_delgado
             
-        # Diseñar Filas de Datos (Fila 4 en adelante)
         for row_idx, row in enumerate(worksheet.iter_rows(min_row=4, max_row=worksheet.max_row), start=4):
             worksheet.row_dimensions[row_idx].height = 20
             for cell in row:
                 cell.font = fuente_datos
                 cell.border = borde_delgado
                 
-                # Columnas de claves, identificadores y fechas van centradas
                 if cell.column_letter in ['A', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U']:
                     cell.alignment = alineacion_centro
                 else:
@@ -112,7 +108,6 @@ def generar_excel_estilizado(registros_queryset):
                 if row_idx % 2 == 0:
                     cell.fill = fill_cebra
                     
-        # Auto-ajustar ancho
         for col in worksheet.columns:
             max_len = max(len(str(cell.value or '')) for cell in col)
             col_letter = col[0].column_letter
@@ -122,7 +117,7 @@ def generar_excel_estilizado(registros_queryset):
 
 
 # ==========================================
-# 1. VISTA DE CARGA MASIVA STPS (EXCEL Y CSV MS-DOS)
+# 1. VISTA DE CARGA MASIVA STPS
 # ==========================================
 @login_required
 @transaction.atomic
@@ -141,7 +136,6 @@ def cargar_stps(request):
         nombre_archivo = excel_file.name.lower()
         
         try:
-            # Lectura condicional según extensión (Soporta Excel y CSV MS-DOS/Latin-1)
             if nombre_archivo.endswith('.csv'):
                 try:
                     df = pd.read_csv(excel_file, dtype=str, encoding='latin-1', sep=None, engine='python')
@@ -285,7 +279,7 @@ def editar_registro_stps(request, pk):
 
 
 # ==========================================
-# 4. COMPLEMENTOS Y DASHBOARD GENERAL
+# 4. DASHBOARD Y PLAN CAPTURA
 # ==========================================
 @login_required
 def dashboard(request):
@@ -432,14 +426,11 @@ def descargar_pdf(request):
     if pisa_status.err:
         return HttpResponse('Ocurrió un error al generar el PDF', status=500)
     return response
-from datetime import date, datetime
-import openpyxl
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from django.shortcuts import render, redirect
-from .models import Curso, PlanCaptura
 
+
+# ==========================================
+# CARGA DE EXCEL PLAN CAPTURA
+# ==========================================
 @login_required
 def cargar_excel(request):
     if request.method == "POST" and request.FILES.get('archivo_excel'):
@@ -452,11 +443,9 @@ def cargar_excel(request):
             wb = openpyxl.load_workbook(excel_file, data_only=True)
             worksheet = wb.active
             
-            # 1. MAPEO FORZADO / SEGURO DE CABECERAS
             idx_no, idx_cc, idx_puesto, idx_nomina, idx_nombre, idx_area, idx_curp, idx_induccion = 0, 1, 2, 3, 4, 5, 6, 7
             idx_curso, idx_fi, idx_ft, idx_duracion, idx_horas = 13, 14, 15, 16, 18
 
-            # Calibración dinámica por lectura de texto real
             for fila_head in range(16, 19):
                 row_head = [str(cell.value).strip().upper() if cell.value is not None else "" for cell in worksheet[fila_head]]
                 for i, text in enumerate(row_head):
@@ -473,19 +462,13 @@ def cargar_excel(request):
                     elif "D" == text and len(text) == 1: idx_duracion = i
                     elif "TOTAL HORAS" in text or "TOTAL DE HORAS" in text: idx_horas = i
 
-            print(f"--> Índices de Mapeo Activos: Nómina={idx_nomina}, Nombre={idx_nombre}, Curso={idx_curso}")
-
-            # ==========================================================
-            # 2. PROCESAMIENTO SIN FILTROS DE EXCLUSIÓN
-            # ==========================================================
             registros_creados = 0
             
-            # Variables de memoria histórica con respaldos genéricos para evitar bloqueos iniciales
             ultimo_no = "1"
             ultimo_cc = "GENERAL"
             ultimo_puesto = "OPERATIVO"
             ultimo_nomina = "0000"
-            ultimo_nombre = "TRABAJADOR EN PROCESO"  # <-- Inicializado con texto para evitar el 'continue' erróneo
+            ultimo_nombre = "TRABAJADOR EN PROCESO"
             ultimo_area = "PRODUCCION"
             ultimo_curp = "XAXX010101X"
             ultimo_induccion = False
@@ -506,7 +489,6 @@ def cargar_excel(request):
                 while len(row) < 30:
                     row.append(None)
 
-                # 1. Extracción e inspección de valores string
                 val_no = str(row[idx_no]).strip() if row[idx_no] is not None else ""
                 val_cc = str(row[idx_cc]).strip() if row[idx_cc] is not None else ""
                 val_puesto = str(row[idx_puesto]).strip() if row[idx_puesto] is not None else ""
@@ -518,11 +500,9 @@ def cargar_excel(request):
                 val_nombre_upper = val_nombre.upper()
                 val_nomina_upper = val_nomina.upper()
 
-                # Ignorar firmas y totales finales
                 if "TOTAL" in val_nombre_upper or "TOTAL" in val_nomina_upper or "ELABORÓ" in val_nombre_upper:
                     continue
 
-                # --- ARRASTRE DE DATOS DEL TRABAJADOR ---
                 if val_no and val_no not in ["", "0", "0.0", "None", "NONE"]: ultimo_no = val_no
                 if val_cc and val_cc not in ["", "0", "0.0", "None", "NONE"]: ultimo_cc = val_cc
                 if val_puesto and val_puesto not in ["", "0", "0.0", "None", "NONE"]: ultimo_puesto = val_puesto
@@ -532,12 +512,11 @@ def cargar_excel(request):
                 if val_curp and val_curp not in ["", "0", "0.0", "None", "NONE"]: ultimo_curp = val_curp
 
                 if not ultimo_nombre or ultimo_nombre.upper() in ["", "0", "0.0", "NONE", "TRABAJADOR EN PROCESO"]:
-                    if val_nombre:  # Intento de rescate inmediato
+                    if val_nombre:
                         ultimo_nombre = val_nombre
                     else:
                         continue
 
-                # --- ARRASTRE DE CAPACITACIÓN Y FECHAS (EVITA LOS NULLS) ---
                 val_curso = str(row[idx_curso]).strip() if row[idx_curso] is not None else ""
                 if not val_curso or val_curso.upper() in ["", "0", "0.0", "NONE"]:
                     val_curso = str(row[idx_curso + 1]).strip() if row[idx_curso + 1] is not None else ""
@@ -545,7 +524,6 @@ def cargar_excel(request):
                 if val_curso and val_curso.upper() not in ["", "0", "0.0", "NONE"]:
                     ultimo_curso = val_curso
 
-                # Procesamiento tolerante de fechas con memoria
                 def parsear_fecha(campo):
                     if not campo: return None
                     if isinstance(campo, (date, datetime)): return campo.date() if isinstance(campo, datetime) else campo
@@ -562,7 +540,6 @@ def cargar_excel(request):
                 if val_ft: ultima_ft = val_ft
                 elif val_fi: ultima_ft = val_fi
 
-                # Duraciones y Horas con memoria
                 val_duracion = row[idx_duracion]
                 val_horas = row[idx_horas] if idx_horas < len(row) and row[idx_horas] is not None else val_duracion
 
@@ -575,24 +552,20 @@ def cargar_excel(request):
                     elif val_duracion is not None: ultima_horas = ultima_duracion
                 except: pass
 
-                # Inducción con memoria
                 val_induccion_raw = str(row[idx_induccion]).strip().upper() if row[idx_induccion] is not None else ""
                 if val_induccion_raw in ['X', 'SI', 'SÍ', '1', 'TRUE']:
                     ultimo_induccion = True
                 elif row[idx_induccion] is not None:
                     ultimo_induccion = False
 
-                # Formatear nómina
                 if ultimo_nomina.endswith('.0'):
                     ultimo_nomina = ultimo_nomina[:-2]
 
                 try: numero_registro = int(float(ultimo_no))
                 except: numero_registro = registros_creados + 1
 
-                # Obtener objeto Curso
                 curso_obj, _ = Curso.objects.get_or_create(nombre=ultimo_curso)
 
-                # --- INSERCIÓN EN BASE DE DATOS SIN CAMPOS NULL ---
                 PlanCaptura.objects.create(
                     no=numero_registro, 
                     centro_costos=ultimo_cc, 
@@ -612,7 +585,6 @@ def cargar_excel(request):
                 )
                 registros_creados += 1
 
-            print(f"--> [EXITO] SE HAN VOLCADO A LA BASE DE DATOS: {registros_creados} REGISTROS.")
             messages.success(request, f'¡Excelente! Se han capturado {registros_creados} registros directamente en PlanCaptura.')
             return redirect('dashboard')
             
@@ -623,23 +595,13 @@ def cargar_excel(request):
             return redirect('cargar_excel')
 
     return render(request, 'core/cargar_excel.html')
-import os
-from io import BytesIO
-from django.conf import settings
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, JsonResponse
-from django.contrib.auth.decorators import login_required
-from django.db.models import Q
-from .models import CargaSTPS
 
-# Paquete oficial correcto para renderizar plantillas Word
-from docxtpl import DocxTemplate
 
+# ==========================================
+# VISOR DC-3 (BÚSQUEDA)
+# ==========================================
 @login_required
 def visor_dc3_excel(request):
-    """
-    Maneja la interfaz web de búsqueda del personal (Autocomplete AJAX).
-    """
     if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('term'):
         q = request.GET.get('term', '').strip()
         q = q.replace('\t', ' ')
@@ -684,37 +646,24 @@ def visor_dc3_excel(request):
         nombre = f"{registro.nombre or ''} {registro.primer_apellido or ''} {registro.segundo_apellido or ''}"
         nombre = " ".join(nombre.split())
 
+        # Cargar Áreas y Subáreas
+        from .models import AreaLaboral
+        areas = AreaLaboral.objects.prefetch_related('subareas').all()
+
         context = {
             "registro": registro,
             "nombre_completo": nombre,
-            "error_horas": horas < 0
+            "error_horas": horas < 0,
+            "areas": areas,
         }
 
     return render(request, "capacitacion/visor_dc3_excel.html", context)
 
-
-# =========================================================================
-# 📥 DESCARGAR DC3 - ACTUALIZADO CON HORAS EN CUADRITOS INDIVIDUALES
-# =========================================================================
-
-import os
-import pandas as pd
-from io import BytesIO
-from django.conf import settings
-from django.shortcuts import get_object_or_404, render, redirect
-from django.http import HttpResponse
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from docxtpl import DocxTemplate
-
-# Importamos todos tus modelos oficiales
-from .models import CargaSTPS, PlanCaptura, AreaTematica
-
+# ==========================================
+# CARGAR ÁREAS TEMÁTICAS
+# ==========================================
 @login_required
 def cargar_areas_tematicas(request):
-    """
-    Interfaz para subir el Excel independiente de Áreas Temáticas y guardarlo en la Base de Datos
-    """
     if not request.user.is_staff:
         return HttpResponse("Acceso denegado", status=403)
 
@@ -722,77 +671,85 @@ def cargar_areas_tematicas(request):
         excel_file = request.FILES['archivo_excel']
         
         try:
-            # 1. Leer todas las pestañas del Excel
             dict_excel = pd.read_excel(excel_file, sheet_name=None)
-            
-            # 2. Buscar primero si existe una pestaña que se parezca a 'area' o 'tematica'
             nombre_pestana = next((sheet for sheet in dict_excel.keys() if 'area' in sheet.lower() or 'tematica' in sheet.lower()), None)
             
-            # 3. 💡 FLEXIBILIDAD: Si no la encuentra por nombre, agarra la primera pestaña que tenga el archivo
             if not nombre_pestana:
                 nombre_pestana = list(dict_excel.keys())[0]
             
-            # Cargar el DataFrame de la pestaña seleccionada
             df = dict_excel[nombre_pestana]
-            
-            # Limpiar nombres de columnas (quitar espacios y pasar a minúsculas)
             df.columns = [str(col).strip().lower() for col in df.columns]
             
-            # Detectar dinámicamente las columnas de Clave y Descripción
             col_clave = next((c for c in df.columns if 'clave' in c or 'id' in c or 'cod' in c), None)
             col_desc = next((c for c in df.columns if 'desc' in c or 'nombre' in c or 'area' in c), None)
             
             if not col_clave or not col_desc:
-                messages.error(
-                    request, 
-                    f"El Excel (Hoja: '{nombre_pestana}') debe tener una columna para la 'Clave' y otra para la 'Descripción'. Verifique los encabezados."
-                )
+                messages.error(request, f"El Excel debe tener columnas de Clave y Descripción.")
                 return render(request, 'core/cargar_areas.html')
             
             contador_creados = 0
             
-            # 4. Recorrer las filas del Excel e impactar la BD
             for _, fila in df.iterrows():
                 clave_valor = str(fila[col_clave]).strip()
                 descripcion_valor = str(fila[col_desc]).strip()
                 
-                # Ignorar registros vacíos o nulos
                 if pd.isna(fila[col_clave]) or clave_valor.lower() == 'nan' or not clave_valor:
                     continue
                 
-                # Quitar decimales flotantes molestos si la clave se lee como número (ej. "95.0" -> "95")
                 if clave_valor.endswith('.0'):
                     clave_valor = clave_valor[:-2]
                 
-                # Guarda o actualiza en el modelo oficial
                 AreaTematica.objects.update_or_create(
                     clave=clave_valor,
                     defaults={'descripcion': descripcion_valor}
                 )
                 contador_creados += 1
                 
-            messages.success(request, f"¡Catálogo procesado con éxito! Se sincronizaron {contador_creados} áreas temáticas desde la hoja '{nombre_pestana}'.")
+            messages.success(request, f"¡Se sincronizaron {contador_creados} áreas temáticas!")
             return redirect('cargar_areas_tematicas')
             
         except Exception as e:
-            messages.error(request, f"Error al procesar el archivo Excel: {str(e)}")
+            messages.error(request, f"Error al procesar el archivo: {str(e)}")
             
     return render(request, 'core/cargar_areas.html')
 
+
+# ==========================================
+# DESCARGAR DC-3 RELLENO
+# ==========================================
 @login_required
 def descargar_dc3_relleno(request, empleado_id):
-    """
-    Genera y descarga el archivo Word DC-3 cruzando Puesto y Área Temática oficial
-    """
     if not request.user.is_staff:
         return HttpResponse("Acceso denegado", status=403)
 
-    # 1. Obtener datos del trabajador
     registro = get_object_or_404(CargaSTPS, id=empleado_id)
 
+    # =========================
+    # 📌 SUBÁREA SELECCIONADA
+    # =========================
+    from .models import SubareaLaboral
+
+    texto_area = ""
+    texto_subarea = ""
+    subarea_id = request.GET.get("subarea_id")
+
+    if subarea_id:
+        try:
+            subarea = SubareaLaboral.objects.select_related('area').get(id=subarea_id)
+            texto_area = f"{subarea.area.codigo} {subarea.area.nombre}".upper()
+            texto_subarea = f"{subarea.codigo} {subarea.nombre}".upper()
+        except SubareaLaboral.DoesNotExist:
+            pass
+
+    # =========================
+    # 🧍 NOMBRE COMPLETO
+    # =========================
     nombre_completo = f"{registro.primer_apellido or ''} {registro.segundo_apellido or ''} {registro.nombre or ''}".strip()
     nombre_completo = " ".join(nombre_completo.split()).upper()
 
+    # =========================
+    # 📄 PLANTILLA WORD
+    # =========================
     ruta_plantilla = os.path.abspath(
         os.path.join(settings.BASE_DIR, "media", "plantillas", "DC-3-Plantilla.docx")
     )
@@ -802,7 +759,9 @@ def descargar_dc3_relleno(request, empleado_id):
     except FileNotFoundError:
         return HttpResponse(f"No se encontró la plantilla en: {ruta_plantilla}", status=404)
 
-    # --- BUSCAR EL PUESTO EN PLAN_CAPTURA ---
+    # =========================
+    # 🧑‍💼 PUESTO
+    # =========================
     puesto_trabajador = ""
     curp_registro = (registro.curp or "").strip()
 
@@ -818,73 +777,80 @@ def descargar_dc3_relleno(request, empleado_id):
 
     puesto_trabajador = (puesto_trabajador or "").upper().strip()
 
-    # --- BUSCAR EL ÁREA TEMÁTICA EN EL NUEVO MODELO ---
+    # =========================
+    # 📚 ÁREA TEMÁTICA (del curso)
+    # =========================
     area_tematica_curso = ""
     clave_area = str(getattr(registro, 'clave_area_tematica', "") or "").strip()
 
     if clave_area:
-        # Buscamos en el modelo oficial que acabamos de crear
         area_obj = AreaTematica.objects.filter(clave=clave_area).first()
         if area_obj:
             area_tematica_curso = area_obj.descripcion.upper().strip()
 
-    # Si no se encuentra en la base de datos, dejamos la clave numérica por seguridad
     if not area_tematica_curso:
         area_tematica_curso = clave_area.upper()
 
-    # --- PROCESAR HORAS ---
+    # =========================
+    # ⏱ HORAS
+    # =========================
     valor_duracion = getattr(registro, 'duracion', None) or getattr(registro, 'horas', None) or 0
     try:
         horas_texto = str(int(valor_duracion))
     except (ValueError, TypeError):
         horas_texto = str(valor_duracion).strip()
 
-    # --- PROCESAR FECHAS ---
-    f_inicio_obj = getattr(registro, 'fec_inicio', None)
-    ano_ini, mes_ini, dia_ini = "", "", ""
-    if f_inicio_obj:
-        try:
-            ano_ini, mes_ini, dia_ini = f_inicio_obj.strftime('%Y'), f_inicio_obj.strftime('%m'), f_inicio_obj.strftime('%d')
-        except AttributeError:
-            f_str = str(f_inicio_obj).strip()
-            if "-" in f_str:
-                partes = f_str.split()[0].split('-')
-                if len(partes) == 3: ano_ini, mes_ini, dia_ini = partes[0], partes[1], partes[2]
+    # =========================
+    # 📅 FECHAS
+    # =========================
+    def formatear_fecha(valor):
+        if not valor:
+            return "", "", ""
+        if hasattr(valor, "strftime"):
+            return valor.strftime("%Y"), valor.strftime("%m"), valor.strftime("%d")
+        texto = str(valor).strip().split()[0]
+        for formato in ["%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d"]:
+            try:
+                fecha = datetime.strptime(texto, formato)
+                return fecha.strftime("%Y"), fecha.strftime("%m"), fecha.strftime("%d")
+            except:
+                continue
+        return "", "", ""
 
-    f_fin_obj = getattr(registro, 'fec_termino', None)
-    ano_fin, mes_fin, dia_fin = "", "", ""
-    if f_fin_obj:
-        try:
-            ano_fin, mes_fin, dia_fin = f_fin_obj.strftime('%Y'), f_fin_obj.strftime('%m'), f_fin_obj.strftime('%d')
-        except AttributeError:
-            f_str = str(f_fin_obj).strip()
-            if "-" in f_str:
-                partes = f_str.split()[0].split('-')
-                if len(partes) == 3: ano_fin, mes_fin, dia_fin = partes[0], partes[1], partes[2]
+    inicio = getattr(registro, 'fec_inicio', None) or getattr(registro, 'fecha_inicio', None)
+    fin = getattr(registro, 'fec_termino', None) or getattr(registro, 'fecha_termino', None)
 
-    # Diccionario final para Word
+    ano_ini, mes_ini, dia_ini = formatear_fecha(inicio)
+    ano_fin, mes_fin, dia_fin = formatear_fecha(fin)
+
+    # =========================
+    # 📦 CONTEXTO WORD
+    # =========================
     contexto_word = {
         "nombre": nombre_completo,
         "ocupacion": (registro.clave_ocupacion or "").strip(),
         "empresa": "LECHE PARA EL BIENESTAR LICONSA S.A. DE C.V.",
         "curso": (registro.nombre_curso or "").upper().strip(),
         "agente": (registro.rfc_agente_stps or "REGISTRO INTERNO LICONSA").upper().strip(),
-        
         "puesto": puesto_trabajador,
         "area_tematica": area_tematica_curso,
-        
+
+        # Nuevos campos de Área y Subárea laboral
+        "area_laboral": texto_area,
+        "subarea_laboral": texto_subarea,
+
         "duracion_horas": horas_texto,
         "ano_inicio": ano_ini, "mes_inicio": mes_ini, "dia_inicio": dia_ini,
         "ano_fin": ano_fin, "mes_fin": mes_fin, "dia_fin": dia_fin,
     }
 
-    # Cuadritos CURP
+    # CURP letra por letra
     curp_texto = (registro.curp or "").upper().strip().ljust(18)
     for i, letra in enumerate(curp_texto):
         contexto_word[f"c{i}"] = letra
 
-    # Cuadritos RFC Empresa
-    rfc_texto = "LIC950821M42".upper().strip().ljust(12)
+    # RFC Empresa
+    rfc_texto = "LIC950821M84".upper().strip().ljust(12)
     for i, letra in enumerate(rfc_texto):
         contexto_word[f"r{i}"] = letra
 
@@ -894,294 +860,11 @@ def descargar_dc3_relleno(request, empleado_id):
     doc.save(output)
     output.seek(0)
 
-    response = HttpResponse(output.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
     filename = f"DC3_{(registro.curp or registro.id).upper().strip()}.docx"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
     return response
-
-import os
-from io import BytesIO
-from datetime import datetime
-from django.conf import settings
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
-from docxtpl import DocxTemplate
-from .models import CatalogoOcupacion
-from .models import CargaSTPS, PlanCaptura, AreaTematica
-
-
-@login_required
-def descargar_dc3_relleno(request, empleado_id):
-
-    # 🔒 Seguridad
-    if not request.user.is_staff:
-        return HttpResponse("Acceso denegado", status=403)
-
-    # 📌 Obtener registro
-    registro = get_object_or_404(CargaSTPS, id=empleado_id)
-
-    # =========================
-    # 🧍 NOMBRE COMPLETO
-    # =========================
-    nombre_completo = f"{registro.primer_apellido or ''} {registro.segundo_apellido or ''} {registro.nombre or ''}"
-    nombre_completo = " ".join(nombre_completo.split()).upper()
-
-    # =========================
-    # 📄 PLANTILLA WORD
-    # =========================
-    ruta_plantilla = os.path.join(
-        settings.BASE_DIR,
-        "media",
-        "plantillas",
-        "DC-3-Plantilla.docx"
-    )
-
-    if not os.path.exists(ruta_plantilla):
-        return HttpResponse("No existe la plantilla DC-3", status=404)
-
-    doc = DocxTemplate(ruta_plantilla)
-
-    # =========================
-    # 🧑‍💼 PUESTO (CRUCE)
-    # =========================
-    puesto_trabajador = ""
-    curp = (registro.curp or "").strip()
-
-    if curp:
-        plan = PlanCaptura.objects.filter(curp__iexact=curp).first()
-        if plan:
-            puesto_trabajador = plan.puesto or ""
-
-    if not puesto_trabajador:
-        plan = PlanCaptura.objects.filter(
-            nombre_trabajador__icontains=nombre_completo
-        ).first()
-        if plan:
-            puesto_trabajador = plan.puesto or ""
-
-    puesto_trabajador = puesto_trabajador.upper()
-
-    # =========================
-    # 📚 ÁREA TEMÁTICA
-    # =========================
-    clave_area = str(registro.clave_area_tematica or "").strip()
-
-    if clave_area.endswith(".0"):
-        clave_area = clave_area[:-2]
-
-    area = AreaTematica.objects.filter(clave=clave_area).first()
-    area_tematica = area.descripcion.upper() if area else clave_area
-
-    # =========================
-    # ⏱ DURACIÓN
-    # =========================
-    duracion = registro.duracion or registro.horas or 0
-
-    try:
-        horas = str(int(duracion))
-    except:
-        horas = str(duracion)
-
-    # =========================
-    # 📅 FUNCIÓN DE FECHA ROBUSTA
-    # =========================
-    def formatear_fecha(valor):
-        if not valor:
-            return "", "", ""
-
-        # Si es fecha tipo Django
-        if hasattr(valor, "strftime"):
-            return (
-                valor.strftime("%Y"),
-                valor.strftime("%m"),
-                valor.strftime("%d")
-            )
-
-        texto = str(valor).strip().split()[0]
-
-        formatos = [
-            "%Y-%m-%d",
-            "%d-%m-%Y",
-            "%d/%m/%Y",
-            "%Y/%m/%d",
-            "%d/%m/%y",
-            "%d-%m-%y",
-        ]
-
-        for formato in formatos:
-            try:
-                fecha = datetime.strptime(texto, formato)
-                return (
-                    fecha.strftime("%Y"),
-                    fecha.strftime("%m"),
-                    fecha.strftime("%d")
-                )
-            except:
-                continue
-
-        return "", "", ""
-
-    # =========================
-    # 📅 OBTENER FECHAS
-    # =========================
-    inicio = (
-        getattr(registro, 'fec_inicio', None)
-        or getattr(registro, 'fecha_inicio', None)
-    )
-
-    fin = (
-        getattr(registro, 'fec_termino', None)
-        or getattr(registro, 'fecha_termino', None)
-        or getattr(registro, 'fec_fin', None)
-    )
-
-    ano_ini, mes_ini, dia_ini = formatear_fecha(inicio)
-    ano_fin, mes_fin, dia_fin = formatear_fecha(fin)
-
-    # =========================
-    # 📦 CONTEXTO WORD
-    # =========================
-    contexto = {
-        "nombre": nombre_completo,
-        "ocupacion": (registro.clave_ocupacion or ""),
-        "empresa": "LECHE PARA EL BIENESTAR LICONSA S.A. DE C.V.",
-        "curso": (registro.nombre_curso or "").upper(),
-        "agente": (registro.rfc_agente_stps or "REGISTRO INTERNO").upper(),
-
-        "puesto": puesto_trabajador,
-        "area_tematica": area_tematica,
-
-        "duracion_horas": horas,
-
-        "ano_inicio": ano_ini,
-        "mes_inicio": mes_ini,
-        "dia_inicio": dia_ini,
-
-        "ano_fin": ano_fin,
-        "mes_fin": mes_fin,
-        "dia_fin": dia_fin,
-    }
-
-    # =========================
-    # 🆔 CURP (LETRA POR LETRA)
-    # =========================
-    curp_texto = (registro.curp or "").upper().ljust(18)
-
-    for i, letra in enumerate(curp_texto):
-        contexto[f"c{i}"] = letra
-
-    # =========================
-    # 🏢 RFC EMPRESA
-    # =========================
-    rfc = "LIC950821M84".ljust(12)
-
-    for i, letra in enumerate(rfc):
-        contexto[f"r{i}"] = letra
-
-    # =========================
-    # 🧾 RENDER WORD
-    # =========================
-    doc.render(contexto)
-
-    # =========================
-    # 💾 GUARDAR EN SERVIDOR
-    # =========================
-    ruta_guardado = os.path.join(settings.MEDIA_ROOT, "dc3_generados")
-    os.makedirs(ruta_guardado, exist_ok=True)
-
-    curp_archivo = (registro.curp or f"ID_{registro.id}").upper().strip()
-    nombre_archivo = f"DC3_{curp_archivo}.docx"
-    ruta_completa = os.path.join(ruta_guardado, nombre_archivo)
-
-    doc.save(ruta_completa)
-
-    # =========================
-    # 📥 DESCARGA AUTOMÁTICA
-    # =========================
-    buffer = BytesIO()
-    doc.save(buffer)
-    buffer.seek(0)
-
-    response = HttpResponse(
-        buffer.getvalue(),
-        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
-
-    response["Content-Disposition"] = f'attachment; filename="{nombre_archivo}"'
-
-    return response
-
-import pandas as pd
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from .models import CatalogoOcupacion
-@login_required
-def cargar_ocupaciones(request):
-    """
-    Sube el Excel de Ocupaciones. Guarda la clave secuencial (1, 2, 3...)
-    y el bloque descriptivo completo sin recortar nada.
-    """
-    if not request.user.is_staff:
-        return HttpResponse("Acceso denegado", status=403)
-
-    if request.method == 'POST' and request.FILES.get('archivo_excel'):
-        excel_file = request.FILES['archivo_excel']
-
-        try:
-            dict_excel = pd.read_excel(excel_file, sheet_name=None)
-            nombre_pestana = next(
-                (sheet for sheet in dict_excel.keys() if 'ocupa' in sheet.lower()),
-                list(dict_excel.keys())[0]
-            )
-            df = dict_excel[nombre_pestana]
-            df.dropna(how='all', inplace=True)
-            df.columns = [str(col).strip().lower() for col in df.columns]
-
-            col_clave = next((c for c in df.columns if 'clave' in c or 'id' in c or 'cod' in c), None)
-            col_desc = next((c for c in df.columns if 'desc' in c or 'nombre' in c or 'ocupa' in c), None)
-
-            if not col_clave or not col_desc:
-                messages.error(request, f"Error: No se detectaron las columnas requeridas en la hoja '{nombre_pestana}'.")
-                return render(request, 'core/cargar_ocupaciones.html')
-
-            contador = 0
-
-            for _, fila in df.iterrows():
-                val_original_clave = fila[col_clave]
-                val_original_desc = fila[col_desc]
-                
-                if pd.isna(val_original_clave) or pd.isna(val_original_desc): 
-                    continue
-
-                # Forzar a string y limpiar el número secuencial (ej: "1", "2")
-                clave_valor = str(val_original_clave).strip()
-                if clave_valor.endswith('.0'): 
-                    clave_valor = clave_valor[:-2]
-                clave_valor = clave_valor.replace(" ", "")
-
-                # Guardar el texto completo tal cual viene en el Excel ("111010100 - CORTADOR DE PASTO")
-                descripcion_valor = str(val_original_desc).strip()
-
-                if not clave_valor or clave_valor.lower() == 'nan' or not descripcion_valor or descripcion_valor.lower() == 'nan': 
-                    continue
-
-                # 💾 Guardado directo en la Base de Datos
-                CatalogoOcupacion.objects.update_or_create(
-                    clave=clave_valor,
-                    defaults={
-                        'descripcion': descripcion_valor.upper().strip()
-                    }
-                )
-                contador += 1
-
-            messages.success(request, f"¡Catálogo cargado con éxito! Se guardaron {contador} registros.")
-            return redirect('cargar_ocupaciones')
-
-        except Exception as e:
-            messages.error(request, f"Error crítico al procesar Ocupaciones: {str(e)}")
-
-    return render(request, 'core/cargar_ocupaciones.html')

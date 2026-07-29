@@ -55,51 +55,69 @@
             <strong>{{ registro.duracion }} horas</strong> (mínimo requerido: 40 horas).
         </p>
     </div>
-
-    <!-- Resultado Exitoso -->
-    {% elif registro %}
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="card-body p-5">
-            <div class="d-flex align-items-center mb-4">
-                <i class="bi bi-check-circle-fill text-success fs-1 me-3"></i>
-                <div>
-                    <h4 class="fw-bold text-success mb-1">Empleado Encontrado</h4>
-                    <p class="text-muted mb-0">Datos listos para generar el formato DC-3</p>
-                </div>
-            </div>
-
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <label class="text-muted small">Nombre Completo</label>
-                    <p class="fs-5 fw-semibold">{{ nombre_completo }}</p>
-                </div>
-                <div class="col-md-6">
-                    <label class="text-muted small">CURP</label>
-                    <p class="fs-5 fw-semibold">{{ registro.curp }}</p>
-                </div>
-                <div class="col-md-6">
-                    <label class="text-muted small">Curso</label>
-                    <p class="fw-medium">{{ registro.nombre_curso }}</p>
-                </div>
-                <div class="col-md-6">
-                    <label class="text-muted small">Duración Validada</label>
-                    <span class="badge bg-success fs-5 px-3 py-2">
-                        {{ registro.duracion }} horas
-                    </span>
-                </div>
-            </div>
-
-            <div class="text-end mt-5 pt-4 border-top">
-                <a href="{% url 'descargar_dc3_relleno' registro.id %}" 
-                   id="btnDescargar"
-                   class="btn btn-primary btn-lg px-5 py-3 shadow-sm d-inline-flex align-items-center gap-3">
-                    <i class="bi bi-file-earmark-word-fill fs-4"></i>
-                    <span>Generar y Descargar DC-3 (.docx)</span>
-                </a>
+{% elif registro %}
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card-body p-5">
+        <div class="d-flex align-items-center mb-4">
+            <i class="bi bi-check-circle-fill text-success fs-1 me-3"></i>
+            <div>
+                <h4 class="fw-bold text-success mb-1">Empleado Encontrado</h4>
+                <p class="text-muted mb-0">Datos listos para generar el formato DC-3</p>
             </div>
         </div>
-    </div>
 
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <label class="text-muted small">Nombre Completo</label>
+                <p class="fs-5 fw-semibold">{{ nombre_completo }}</p>
+            </div>
+            <div class="col-md-6">
+                <label class="text-muted small">CURP</label>
+                <p class="fs-5 fw-semibold">{{ registro.curp }}</p>
+            </div>
+            <div class="col-md-6">
+                <label class="text-muted small">Curso</label>
+                <p class="fw-medium">{{ registro.nombre_curso }}</p>
+            </div>
+            <div class="col-md-6">
+                <label class="text-muted small">Duración Validada</label>
+                <span class="badge bg-success fs-5 px-3 py-2">
+                    {{ registro.duracion }} horas
+                </span>
+            </div>
+        </div>
+
+        <!-- ========== SELECT DE ÁREA Y SUBÁREA ========== -->
+        <form method="get" action="{% url 'descargar_dc3_relleno' registro.id %}">
+            <div class="mb-4">
+                <label for="subarea" class="form-label fw-semibold">
+                    Área y Subárea Laboral
+                </label>
+                <select name="subarea_id" id="subarea" class="form-select form-select-lg" required>
+                    <option value="" selected disabled>-- Selecciona una Subárea --</option>
+                    {% for area in areas %}
+                        <optgroup label="{{ area.codigo }} - {{ area.nombre }}">
+                            {% for subarea in area.subareas.all %}
+                                <option value="{{ subarea.id }}">
+                                    {{ subarea.codigo }} {{ subarea.nombre }}
+                                </option>
+                            {% endfor %}
+                        </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="text-end pt-3 border-top">
+                <button type="submit" class="btn btn-primary btn-lg px-5 py-3 shadow-sm d-inline-flex align-items-center gap-3">
+                    <i class="bi bi-file-earmark-word-fill fs-4"></i>
+                    <span>Generar y Descargar DC-3 (.docx)</span>
+                </button>
+            </div>
+        </form>
+        <!-- ============================================== -->
+
+    </div>
+</div>
     <!-- Estado Inicial -->
     {% else %}
     <div class="text-center py-5">
@@ -128,23 +146,6 @@ $(function() {
         select: function(event, ui) {
             window.location.href = "?empleado_id=" + ui.item.id;
         }
-    });
-
-    // SweetAlert al descargar
-    $("#btnDescargar").on("click", function(e) {
-        e.preventDefault();
-        const url = $(this).attr("href");
-
-        Swal.fire({
-            title: 'Generando documento...',
-            text: 'Por favor espera un momento',
-            icon: 'info',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            timer: 1500
-        }).then(() => {
-            window.location.href = url;
-        });
     });
 });
 </script>

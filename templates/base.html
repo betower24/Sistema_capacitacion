@@ -4,11 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Capacitación - SAAP</title>
+    <title>Sistema de gestión para  Capacitación</title>
     
+    <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -16,135 +19,195 @@
             --saap-primary-light: #0052cc;
             --saap-primary-dark: #002255;
             --saap-accent: #00a3e0;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-700: #334155;
+            --dark: #0f172a;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            background-image: linear-gradient(rgba(0, 48, 135, 0.75), rgba(0, 48, 135, 0.85)), 
-                             url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&q=80');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            color: white;
+            background-color: #f1f5f9;
+            color: var(--dark);
             min-height: 100vh;
+            margin: 0;
         }
 
-        /* Overlay para mejorar legibilidad */
-        .main-wrapper {
-            background: rgba(255, 255, 255, 0.95);
-            min-height: 100vh;
-        }
-
+        /* ========== NAVBAR ========== */
         .custom-navbar {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(20px);
-            border-bottom: 2px solid var(--saap-primary);
-            padding: 14px 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0.85rem 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         }
 
         .navbar-brand {
-            font-weight: 700;
-            font-size: 1.45rem;
-            letter-spacing: -0.04em;
-            color: var(--saap-primary);
+            font-weight: 800;
+            font-size: 1.35rem;
+            letter-spacing: -0.03em;
+            color: var(--saap-primary) !important;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 0.65rem;
+            text-decoration: none;
+        }
+
+        .navbar-brand:hover {
+            color: var(--saap-primary-dark) !important;
         }
 
         .brand-icon {
-            font-size: 1.8rem;
+            font-size: 1.7rem;
             color: var(--saap-primary);
         }
 
+        /* User card */
         .user-profile-card {
-            background: white;
-            padding: 8px 12px 8px 20px;
-            border-radius: 50px;
-            border: 1px solid #e0e6ed;
-            box-shadow: 0 4px 12px rgba(0, 48, 135, 0.1);
+            background: var(--gray-50);
+            padding: 0.4rem 0.6rem 0.4rem 1rem;
+            border-radius: 999px;
+            border: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
-        .app-container {
-            margin-top: 48px;
-            margin-bottom: 80px;
-            padding: 48px;
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 24px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-            color: #1a1a1a;
-        }
-
-        .app-container h4 {
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: var(--saap-primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: 700;
-            color: var(--saap-primary);
-            letter-spacing: -0.04em;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-panel {
+            background: var(--saap-primary);
+            color: white;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            padding: 0.45rem 1rem;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-panel:hover {
+            background: var(--saap-primary-dark);
+            color: white;
+        }
+
+        .btn-logout {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: none;
+            border-radius: 10px;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            background: #fecaca;
+            color: #991b1b;
+        }
+
+        /* ========== CONTENEDOR PRINCIPAL ========== */
+        .app-container {
+            margin-top: 2.5rem;
+            margin-bottom: 4rem;
+            padding: 2.5rem;
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04),
+                        0 2px 4px -2px rgba(0, 0, 0, 0.03);
         }
 
         @media (max-width: 768px) {
             .app-container {
-                padding: 32px 20px;
-                margin-top: 24px;
+                padding: 1.5rem 1.25rem;
+                margin-top: 1.5rem;
+                border-radius: 16px;
+            }
+
+            .user-profile-card {
+                padding: 0.35rem 0.5rem 0.35rem 0.85rem;
             }
         }
     </style>
 </head>
 
 <body>
-    <!-- Wrapper para mantener el contenido legible -->
-    <div class="main-wrapper">
-        <!-- Navbar -->
-        <nav class="navbar custom-navbar sticky-top">
-            <div class="container container-xl">
-                <a class="navbar-brand" href="/">
-                    <i class="bi bi-mortarboard-fill brand-icon"></i>
-                    <span>SAAP - Capacitación</span>
-                </a>
-
-                <div class="ms-auto d-flex align-items-center gap-3">
-                    {% if user.is_authenticated %}
-                    <div class="user-profile-card d-flex align-items-center gap-3">
-                        <span class="text-muted d-none d-md-inline fw-medium">
-                            Hola, <span class="fw-semibold">{{ user.get_full_name|default:user.username }}</span>
-                        </span>
-
-                        <a href="{% url 'dashboard' %}" class="btn btn-primary d-flex align-items-center gap-2">
-                            <i class="bi bi-grid-1x2"></i>
-                            <span class="d-none d-sm-inline">Panel</span>
-                        </a>
-
-                        <form action="{% url 'logout' %}" method="post" id="logoutForm" class="m-0">
-                            {% csrf_token %}
-                            <button type="button" onclick="confirmarSalida()" class="btn btn-danger">
-                                <i class="bi bi-box-arrow-right"></i>
-                            </button>
-                        </form>
-
-                        <div class="user-avatar d-none d-sm-flex">
-                            {{ user.username|slice:":2"|upper }}
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </nav>
-
+    <!-- Navbar -->
+    <nav class="navbar custom-navbar sticky-top">
         <div class="container container-xl">
-            <div class="app-container">
-                {% block content %}
-                <h4>Bienvenido al Sistema de Capacitación SAAP</h4>
-                <p class="text-muted">Seleccione una opción del menú para continuar.</p>
-                {% endblock %}
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-mortarboard-fill brand-icon"></i>
+                <span> Sistema de gestion para Capacitación</span>
+            </a>
+
+            <div class="ms-auto d-flex align-items-center">
+                {% if user.is_authenticated %}
+                <div class="user-profile-card">
+                    <span class="text-muted d-none d-md-inline" style="font-size: 0.9rem;">
+                        Hola, <strong class="text-dark">{{ user.get_full_name|default:user.username }}</strong>
+                    </span>
+
+                    <a href="{% url 'dashboard' %}" class="btn-panel">
+                        <i class="bi bi-grid-1x2-fill"></i>
+                        <span class="d-none d-sm-inline">Panel</span>
+                    </a>
+
+                    <form action="{% url 'logout' %}" method="post" id="logoutForm" class="m-0">
+                        {% csrf_token %}
+                        <button type="button" onclick="confirmarSalida()" class="btn-logout" title="Cerrar sesión">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <div class="user-avatar d-none d-sm-flex">
+                        {{ user.username|slice:":2"|upper }}
+                    </div>
+                </div>
+                {% endif %}
             </div>
+        </div>
+    </nav>
+
+    <!-- Contenido -->
+    <div class="container container-xl">
+        <div class="app-container">
+            {% block content %}
+            <h4 class="fw-bold" style="color: var(--saap-primary);">Bienvenido al Sistema de Capacitación SAAP</h4>
+            <p class="text-muted mb-0">Seleccione una opción del menú para continuar.</p>
+            {% endblock %}
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // SweetAlert messages...
         document.addEventListener("DOMContentLoaded", function() {
             {% if messages %}
                 {% for message in messages %}
@@ -164,8 +227,8 @@
                 text: "Se cerrará la sesión actual.",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#d32f2f',
-                cancelButtonColor: '#6c757d',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Sí, salir',
                 cancelButtonText: 'Cancelar'
             }).then((result) => {

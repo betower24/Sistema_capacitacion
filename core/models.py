@@ -207,16 +207,29 @@ class AreaTematica(models.Model):
     class Meta:
         verbose_name = "Área Temática"
         verbose_name_plural = "Áreas Temáticas"
-        db_table = "core_areatematica" # Forzamos el nombre exacto de la tabla en SQLite
-        
-class CatalogoOcupacion(models.Model):
-    clave = models.CharField(max_length=20, unique=True, verbose_name="Clave")
-    descripcion = models.TextField(verbose_name="Descripción Completa")
+        db_table = "core_areatematica" # Forzamos el nombre exacto
+
+class AreaLaboral(models.Model):
+    codigo = models.CharField(max_length=10, unique=True, verbose_name="Código")
+    nombre = models.CharField(max_length=255, verbose_name="Nombre del Área")
 
     class Meta:
-        verbose_name = "Ocupación (Catálogo STPS)"
-        verbose_name_plural = "Catálogo de Ocupaciones"
-        ordering = ['clave']
+        verbose_name = "Área Laboral"
+        verbose_name_plural = "Áreas Laborales"
+        ordering = ['codigo']
 
     def __str__(self):
-        return f"{self.clave} - {self.descripcion[:80]}..."
+        return f"{self.codigo} {self.nombre}"
+
+class SubareaLaboral(models.Model):
+    area = models.ForeignKey(AreaLaboral, on_delete=models.CASCADE, related_name='subareas')
+    codigo = models.CharField(max_length=10, unique=True, verbose_name="Código")
+    nombre = models.CharField(max_length=255, verbose_name="Nombre de la Subárea")
+
+    class Meta:
+        verbose_name = "Subárea Laboral"
+        verbose_name_plural = "Subáreas Laborales"
+        ordering = ['codigo']
+
+    def __str__(self):
+        return f"{self.codigo} {self.nombre}"
