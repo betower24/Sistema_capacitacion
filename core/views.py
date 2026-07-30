@@ -345,25 +345,24 @@ def programa_real(request):
 @login_required
 @transaction.atomic
 def cursos_nuevos(request):
-    mes_seleccionado = request.GET.get('mes', None)
-    if not mes_seleccionado:
-        mes_seleccionado = str(datetime.now().month).zfill(2)
-        
+    mes_seleccionado = request.GET.get('mes') or str(datetime.now().month).zfill(2)
+
     meses_dict = {
         '01': 'ENERO', '02': 'FEBRERO', '03': 'MARZO', '04': 'ABRIL',
         '05': 'MAYO', '06': 'JUNIO', '07': 'JULIO', '08': 'AGOSTO',
         '09': 'SEPTIEMBRE', '10': 'OCTUBRE', '11': 'NOVIEMBRE', '12': 'DICIEMBRE'
     }
-    nombre_mes = meses_dict.get(mes_seleccionado, 'MES NO VALIDO')
-    instance_id = request.GET.get('editar_id', None)
+    nombre_mes = meses_dict.get(mes_seleccionado, 'MES NO VÁLIDO')
+
+    instance_id = request.GET.get('editar_id')
     instance = get_object_or_404(CursoExcel, id=instance_id) if instance_id else None
-    
+
     if request.method == 'POST':
         form = CursoExcelForm(request.POST, instance=instance)
         if form.is_valid():
             nuevo_registro = form.save(commit=False)
             if not instance:
-                nuevo_registro.mes = mes_seleccionado 
+                nuevo_registro.mes = mes_seleccionado
             nuevo_registro.save()
             messages.success(request, "Registro guardado correctamente.")
             return redirect(f"{request.path}?mes={mes_seleccionado}")
@@ -372,21 +371,32 @@ def cursos_nuevos(request):
 
     registros = CursoExcel.objects.filter(mes=mes_seleccionado).order_by('no')
     totales = registros.aggregate(
-        total_cantidad=Sum('cantidad'), total_constancia=Sum('constancia'),
-        total_operativo=Sum('operativo'), total_promotores=Sum('promotores'),
-        total_administrative=Sum('administrativo'), total_confianza=Sum('confianza'),
-        total_hombres=Sum('hombres'), total_mujeres=Sum('mujeres')
+        total_cantidad=Sum('cantidad'),
+        total_constancia=Sum('constancia'),
+        total_operativo=Sum('operativo'),
+        total_promotores=Sum('promotores'),
+        total_administrative=Sum('administrativo'),
+        total_confianza=Sum('confianza'),
+        total_hombres=Sum('hombres'),
+        total_mujeres=Sum('mujeres')
     )
     total_general = (
-        (totales['total_operativo'] or 0) + (totales['total_promotores'] or 0) + 
-        (totales['total_administrative'] or 0) + (totales['total_confianza'] or 0)
+        (totales['total_operativo'] or 0) +
+        (totales['total_promotores'] or 0) +
+        (totales['total_administrative'] or 0) +
+        (totales['total_confianza'] or 0)
     )
+
     return render(request, 'cursos_nuevos.html', {
-        'form': form, 'registros': registros, 'totales': totales, 'total_general': total_general,
-        'mes_seleccionado': mes_seleccionado, 'nombre_mes': nombre_mes, 'meses_dict': meses_dict, 'editando': bool(instance)
+        'form': form,
+        'registros': registros,
+        'totales': totales,
+        'total_general': total_general,
+        'mes_seleccionado': mes_seleccionado,
+        'nombre_mes': nombre_mes,
+        'meses_dict': meses_dict,
+        'editando': bool(instance),
     })
-
-
 @login_required
 def capacitaciones(request):
     return render(request, 'placeholder.html', {'titulo': 'Capacitaciones'})

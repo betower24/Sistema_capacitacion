@@ -20,18 +20,24 @@ class CargaSTPSForm(forms.ModelForm):
         for field in self.fields.values():
             if not isinstance(field.widget, forms.DateInput):
                 field.widget.attrs['class'] = 'form-control'
+from django import forms
+from .models import CursoExcel, Curso
+
 class CursoExcelForm(forms.ModelForm):
+    nombre = forms.ChoiceField(
+        label="Nombre del Curso",
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=True
+    )
+
     class Meta:
         model = CursoExcel
-        # Esto incluirá automáticamente todos los campos del modelo en tu HTML
         fields = [
-            'no', 'nombre', 'cantidad', 'constancia', 
-            'operativo', 'promotores', 'administrativo', 'confianza', 
+            'no', 'nombre', 'cantidad', 'constancia',
+            'operativo', 'promotores', 'administrativo', 'confianza',
             'hombres', 'mujeres'
         ]
-        # Opcional: Puedes agregar clases de Bootstrap para que se vea bien
         widgets = {
-            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'no': forms.NumberInput(attrs={'class': 'form-control'}),
             'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
             'constancia': forms.NumberInput(attrs={'class': 'form-control'}),
@@ -42,6 +48,16 @@ class CursoExcelForm(forms.ModelForm):
             'hombres': forms.NumberInput(attrs={'class': 'form-control'}),
             'mujeres': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Cargar cursos desde la base de datos
+        cursos = Curso.objects.all().order_by('nombre')
+        opciones = [('', '-- Selecciona un curso --')]
+        opciones += [(c.nombre, c.nombre) for c in cursos]
+
+        self.fields['nombre'].choices = opciones
 class PlanCapturaForm(forms.ModelForm):
     class Meta:
         model = PlanCaptura
