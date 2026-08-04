@@ -1,152 +1,192 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div class="row g-4">
-    <div class="col-12">
-        <div class="card shadow-sm border-0 rounded-3 p-4 bg-white">
-            <div class="d-flex align-items-center mb-2">
-                <span class="fs-4 me-2"></span>
-                <h4 class="fw-bold m-0 text-dark">Registro de Capacitaciones</h4>
-            </div>
-            <p class="text-muted small mb-4">Captura los datos del bloque correspondiente. Los campos se organizan horizontalmente.</p>
-            
-            <form method="post" autocomplete="off">
-                {% csrf_token %}
-                
-                <div class="django-form-fields horizontal-form-grid">
-                    {{ form.as_p }}
-                </div>
+<div class="container my-4">
+    <h3 class="mb-2">Registro de Capacitaciones</h3>
+    <p class="text-muted">Captura y consulta la matriz de participantes capacitados.</p>
 
-                <div class="d-flex justify-content-end mt-3">
-                    <button type="submit" class="btn btn-primary bg-gradient px-4 py-2 fw-bold shadow-sm">
-                         Guardar Registro
-                    </button>
+    <!-- Formulario -->
+    <div class="card mb-4 p-3 {% if editando %}border-warning{% else %}border-0{% endif %} shadow-sm">
+        <h5 class="card-title text-uppercase fw-bold">
+            {% if editando %}✏️ Editando Capacitación{% else %}➕ Nueva Capacitación{% endif %}
+        </h5>
+        <form method="post" autocomplete="off">
+            {% csrf_token %}
+            <div class="row g-3">
+                {% for field in form %}
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label fw-semibold small text-secondary">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="text-danger small">{{ field.errors }}</div>
+                    {% endif %}
                 </div>
-            </form>
+                {% endfor %}
+            </div>
+            <div class="mt-3 d-flex gap-2">
+                <button type="submit" class="btn {% if editando %}btn-warning{% else %}btn-primary{% endif %} fw-semibold">
+                    {% if editando %}Actualizar{% else %}Guardar Registro{% endif %}
+                </button>
+                {% if editando %}
+                <a href="{% url 'capacitaciones' %}" class="btn btn-secondary">Cancelar</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Filtro -->
+    <div class="card mb-3 p-3 shadow-sm border-0">
+        <div class="row align-items-center g-2">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold mb-1">
+                    <i class="bi bi-funnel"></i> Filtrar capacitaciones
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" id="filtroCap" class="form-control" placeholder="Escribe el nombre...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold mb-1">Resultados</label>
+                <div class="form-control-plaintext">
+                    <span id="contadorResultados" class="badge bg-primary">—</span> registros
+                </div>
+            </div>
+            <div class="col-md-3 text-md-end">
+                <button type="button" id="btnLimpiarFiltro" class="btn btn-outline-secondary btn-sm mt-4">
+                    Limpiar filtro
+                </button>
+            </div>
         </div>
     </div>
 
-    <div class="col-12">
-        <div class="card shadow-sm border-0 rounded-3 p-4 bg-white">
-            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                <div class="d-flex align-items-center">
-                    <span class="fs-4 me-2"></span>
-                    <h5 class="fw-bold m-0 text-dark">Matriz de Participantes Capacitados</h5>
+    <!-- Contadores -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Registros</div>
+                    <div class="fs-4 fw-bold">{{ registros|length }}</div>
                 </div>
-                <span class="badge bg-secondary rounded-pill fs-7 px-3 py-2">
-                    {{ registros|length }} Registros
-                </span>
             </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Total participantes</div>
+                    <div class="fs-4 fw-bold">{{ total_participantes|default:0 }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Total hombres</div>
+                    <div class="fs-4 fw-bold text-info">{{ totales.total_hombres|default:0 }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Total mujeres</div>
+                    <div class="fs-4 fw-bold text-danger">{{ totales.total_mujeres|default:0 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle m-0 small header-matriz text-center">
-                    <thead>
-                        <tr class="table-primary text-dark fw-bold border-bottom-0">
-                            <th rowspan="2" class="align-middle bg-primary text-white">Consecutivo</th>
-                            <th rowspan="2" class="align-middle bg-primary text-white text-start">Nombre Tipo Capacitación</th>
-                            <th class="bg-primary text-white">Participantes</th>
-                            <th colspan="2" class="bg-info text-dark">Total Participantes</th>
-                            <th class="bg-warning text-dark">Total Capacitados en:</th>
-                        </tr>
-                        <tr class="table-light text-secondary fw-semibold border-top-0">
-                            <th>Participantes Operativos</th>
-                            <th>Hombres</th>
-                            <th>Mujeres</th>
-                            <th>Fortalecimiento del Desempeño</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for reg in registros %}
-                        <tr>
-                            <td class="fw-bold text-secondary">{{ reg.consecutivo }}</td>
-                            <td class="text-start fw-medium text-dark">{{ reg.nombre_tipo_capacitacion }}</td>
-                            <td>{{ reg.participantes_operativos|default:0 }}</td>
-                            <td class="text-primary">{{ reg.hombres|default:0 }}</td>
-                            <td class="text-danger">{{ reg.mujeres|default:0 }}</td>
-                            <td>
-                                <span class="badge bg-light text-dark border px-2 py-1 fw-normal">
-                                     {{ reg.total_participantes|default:0 }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
-                                <div class="fs-2 mb-2"></div>
-                                No hay datos capturados en esta sección todavía.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <!-- Tabla -->
+    <div class="card shadow-sm border-0 p-3">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle text-center small mb-0">
+                <thead>
+                    <tr class="table-primary">
+                        <th class="bg-primary text-white">Consecutivo</th>
+                        <th class="bg-primary text-white text-start">Nombre Tipo Capacitación</th>
+                        <th class="bg-primary text-white">Participantes Operativos</th>
+                        <th class="bg-info text-dark">Hombres</th>
+                        <th class="bg-danger text-white">Mujeres</th>
+                        <th class="bg-warning text-dark">Total H+M</th>
+                        <th class="bg-secondary text-white">Fortalecimiento del Desempeño</th>
+                        <th class="bg-dark text-white">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in registros %}
+                    <tr class="fila-cap" data-nombre="{{ reg.nombre_tipo_capacitacion|lower }}">
+                        <td class="fw-bold">{{ reg.consecutivo }}</td>
+                        <td class="text-start fw-medium">
+                            {{ reg.nombre_tipo_capacitacion }}
+                            <div class="mt-1">
+                                <span class="badge text-bg-info">H: {{ reg.hombres|default:0 }}</span>
+                                <span class="badge text-bg-danger">M: {{ reg.mujeres|default:0 }}</span>
+                            </div>
+                        </td>
+                        <td>{{ reg.participantes_operativos|default:0 }}</td>
+                        <td class="text-info fw-bold">{{ reg.hombres|default:0 }}</td>
+                        <td class="text-danger fw-bold">{{ reg.mujeres|default:0 }}</td>
+                        <td>
+                            <span class="badge bg-warning text-dark">
+                                {{ reg.total_participantes|default:0 }}
+                            </span>
+                        </td>
+                        <td>{{ reg.fortalecimiento_desempenio|default:0 }}</td>
+                        <td>
+                            <a href="?editar_id={{ reg.id }}" class="btn btn-sm btn-warning">✏️ Editar</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            No hay datos capturados todavía.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold table-light">
+                        <td colspan="2" class="text-start">TOTALES</td>
+                        <td>{{ totales.total_operativos|default:0 }}</td>
+                        <td class="text-info">{{ totales.total_hombres|default:0 }}</td>
+                        <td class="text-danger">{{ totales.total_mujeres|default:0 }}</td>
+                        <td>{{ total_participantes|default:0 }}</td>
+                        <td>{{ totales.total_fortalecimiento|default:0 }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
     </div>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const inputs = document.querySelectorAll('.django-form-fields input, .django-form-fields select, .django-form-fields textarea');
-        const paragraphs = document.querySelectorAll('.django-form-fields p');
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('filtroCap');
+    const btnLimpiar = document.getElementById('btnLimpiarFiltro');
+    const contador = document.getElementById('contadorResultados');
+    const filas = document.querySelectorAll('tr.fila-cap');
 
-        // Adaptamos los contenedores <p> nativos de Django
-        paragraphs.forEach(p => p.classList.add('mb-2', 'w-100'));
-
-        inputs.forEach(input => {
-            if (input.tagName.toLowerCase() === 'select') {
-                input.classList.add('form-select', 'py-2');
-            } else {
-                input.classList.add('form-control', 'py-2');
-            }
+    function filtrar() {
+        const texto = (input.value || '').toLowerCase().trim();
+        let visibles = 0;
+        filas.forEach(function (fila) {
+            const nombre = fila.getAttribute('data-nombre') || '';
+            const coincide = !texto || nombre.includes(texto);
+            fila.style.display = coincide ? '' : 'none';
+            if (coincide) visibles++;
         });
+        contador.textContent = visibles;
+    }
+
+    input.addEventListener('input', filtrar);
+    btnLimpiar.addEventListener('click', function () {
+        input.value = '';
+        filtrar();
+        input.focus();
     });
+    contador.textContent = filas.length;
+});
 </script>
-
-<style>
-    /* Grid dinámico para el Formulario Horizontal */
-    .horizontal-form-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    /* En pantallas medianas (Tablets) se acomoda en 2 o 3 columnas */
-    @media (min-width: 576px) {
-        .horizontal-form-grid {
-            grid-template-columns: repeat(2, 1fr);
-            align-items: end;
-        }
-    }
-
-    /* En pantallas de computadora (Desktops) se expande hasta en 4 columnas */
-    @media (min-width: 992px) {
-        .horizontal-form-grid {
-            grid-template-columns: repeat(4, 1fr);
-            align-items: end;
-        }
-    }
-
-    /* Estilos personalizados para emular la jerarquía de la imagen original */
-    .header-matriz th {
-        font-size: 0.82rem;
-        padding: 10px 8px !important;
-        vertical-align: middle;
-    }
-
-    .django-form-fields label {
-        display: block;
-        margin-bottom: 0.4rem;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #495057;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .form-control:focus, .form-select:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
-    }
-</style>
 
 {% endblock %}

@@ -22,6 +22,15 @@ class CargaSTPSForm(forms.ModelForm):
                 field.widget.attrs['class'] = 'form-control'
 from django import forms
 from .models import CursoExcel, Curso
+from django import forms
+from .models import CursoExcel, Curso
+from django import forms
+from .models import CursoExcel, Curso
+
+
+from django import forms
+from .models import CursoExcel, Curso
+
 
 class CursoExcelForm(forms.ModelForm):
     nombre = forms.ChoiceField(
@@ -51,13 +60,11 @@ class CursoExcelForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # Cargar cursos desde la base de datos
         cursos = Curso.objects.all().order_by('nombre')
         opciones = [('', '-- Selecciona un curso --')]
         opciones += [(c.nombre, c.nombre) for c in cursos]
-
         self.fields['nombre'].choices = opciones
+
 class PlanCapturaForm(forms.ModelForm):
     class Meta:
         model = PlanCaptura

@@ -25,7 +25,10 @@ from .forms import (
 )
 from docxtpl import DocxTemplate
 
-
+from .models import (
+    PlanCaptura, ProgramaReal, CursoExcel, Capacitacion, Curso, 
+    CargaSTPS, AreaTematica, AreaLaboral, SubareaLaboral, CatalogoAgente
+)
 # ==========================================
 # FUNCIÓN AUXILIAR: ESTILIZAR REPORTES EXCEL
 # ==========================================
@@ -340,11 +343,22 @@ def programa_real(request):
         'form': form, 'registros': registros, 'totales': totales,
         'total_general_participantes': total_general_participantes
     })
+from django.utils import timezone
+from datetime import datetime
+from django.db.models import Sum
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db import transaction
+from .models import CursoExcel
+from .forms import CursoExcelForm
 
 
 @login_required
 @transaction.atomic
 def cursos_nuevos(request):
+    anio_actual = datetime.now().year
+    anio_seleccionado = int(request.GET.get('anio') or anio_actual)
     mes_seleccionado = request.GET.get('mes') or str(datetime.now().month).zfill(2)
 
     meses_dict = {
@@ -360,16 +374,65 @@ def cursos_nuevos(request):
     if request.method == 'POST':
         form = CursoExcelForm(request.POST, instance=instance)
         if form.is_valid():
-            nuevo_registro = form.save(commit=False)
-            if not instance:
-                nuevo_registro.mes = mes_seleccionado
-            nuevo_registro.save()
-            messages.success(request, "Registro guardado correctamente.")
-            return redirect(f"{request.path}?mes={mes_seleccionado}")
+            datos = form.cleaned_data
+            nombre_curso = datos['nombre']
+
+            if instance:
+                # Edición manual de un registro
+                registro = form.save(commit=False)
+                registro.fecha_registro = timezone.now().date()
+                registro.save()
+                messages.success(request, "Registro actualizado correctamente.")
+            else:
+                # Buscar si ya existe el mismo curso en este mes/año
+                registro_existente = CursoExcel.objects.filter(
+                    nombre=nombre_curso,
+                    mes=mes_seleccionado,
+                    anio=anio_seleccionado
+                ).first()
+
+                if registro_existente:
+                    # SUMAR a la fila existente (no crear otra)
+                    registro_existente.cantidad += datos.get('cantidad') or 0
+                    registro_existente.constancia += datos.get('constancia') or 0
+                    registro_existente.operativo += datos.get('operativo') or 0
+                    registro_existente.promotores += datos.get('promotores') or 0
+                    registro_existente.administrativo += datos.get('administrativo') or 0
+                    registro_existente.confianza += datos.get('confianza') or 0
+                    registro_existente.hombres += datos.get('hombres') or 0
+                    registro_existente.mujeres += datos.get('mujeres') or 0
+                    registro_existente.fecha_registro = timezone.now().date()
+                    registro_existente.save()
+                    messages.success(
+                        request,
+                        f"Se actualizó «{nombre_curso}»: se sumaron los nuevos participantes."
+                    )
+                else:
+                    # Primer registro de ese curso en el mes
+                    nuevo = form.save(commit=False)
+                    nuevo.mes = mes_seleccionado
+                    nuevo.anio = anio_seleccionado
+                    nuevo.fecha_registro = timezone.now().date()
+
+                    if not nuevo.no:
+                        ultimo = CursoExcel.objects.filter(
+                            mes=mes_seleccionado,
+                            anio=anio_seleccionado
+                        ).order_by('-no').first()
+                        nuevo.no = (ultimo.no + 1) if ultimo else 1
+
+                    nuevo.save()
+                    messages.success(request, f"Curso «{nombre_curso}» registrado correctamente.")
+
+            return redirect(f"{request.path}?mes={mes_seleccionado}&anio={anio_seleccionado}")
     else:
         form = CursoExcelForm(instance=instance)
 
-    registros = CursoExcel.objects.filter(mes=mes_seleccionado).order_by('no')
+    registros = CursoExcel.objects.filter(
+        mes=mes_seleccionado,
+        anio=anio_seleccionado
+    ).order_by('no')
+
     totales = registros.aggregate(
         total_cantidad=Sum('cantidad'),
         total_constancia=Sum('constancia'),
@@ -378,7 +441,7 @@ def cursos_nuevos(request):
         total_administrative=Sum('administrativo'),
         total_confianza=Sum('confianza'),
         total_hombres=Sum('hombres'),
-        total_mujeres=Sum('mujeres')
+        total_mujeres=Sum('mujeres'),
     )
     total_general = (
         (totales['total_operativo'] or 0) +
@@ -396,11 +459,45 @@ def cursos_nuevos(request):
         'nombre_mes': nombre_mes,
         'meses_dict': meses_dict,
         'editando': bool(instance),
+        'anio_seleccionado': anio_seleccionado,
+        'anio_actual': anio_actual,
     })
 @login_required
+@transaction.atomic
 def capacitaciones(request):
-    return render(request, 'placeholder.html', {'titulo': 'Capacitaciones'})
+    instance_id = request.GET.get('editar_id')
+    instance = get_object_or_404(Capacitacion, id=instance_id) if instance_id else None
 
+    if request.method == 'POST':
+        form = CapacitacionForm(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Registro de capacitación guardado correctamente.")
+            return redirect('capacitaciones')
+    else:
+        form = CapacitacionForm(instance=instance)
+
+    registros = Capacitacion.objects.all().order_by('consecutivo')
+
+    totales = registros.aggregate(
+        total_operativos=Sum('participantes_operativos'),
+        total_hombres=Sum('hombres'),
+        total_mujeres=Sum('mujeres'),
+        total_fortalecimiento=Sum('fortalecimiento_desempenio'),
+    )
+
+    total_participantes = (
+        (totales['total_hombres'] or 0) +
+        (totales['total_mujeres'] or 0)
+    )
+
+    return render(request, 'capacitaciones.html', {
+        'form': form,
+        'registros': registros,
+        'totales': totales,
+        'total_participantes': total_participantes,
+        'editando': bool(instance),
+    })
 
 @login_required
 @transaction.atomic
@@ -656,19 +753,18 @@ def visor_dc3_excel(request):
         nombre = f"{registro.nombre or ''} {registro.primer_apellido or ''} {registro.segundo_apellido or ''}"
         nombre = " ".join(nombre.split())
 
-        # Cargar Áreas y Subáreas
-        from .models import AreaLaboral
         areas = AreaLaboral.objects.prefetch_related('subareas').all()
+        agentes = CatalogoAgente.objects.all().order_by('nombre')
 
         context = {
             "registro": registro,
             "nombre_completo": nombre,
             "error_horas": horas < 0,
             "areas": areas,
+            "agentes": agentes,
         }
 
     return render(request, "capacitacion/visor_dc3_excel.html", context)
-
 # ==========================================
 # CARGAR ÁREAS TEMÁTICAS
 # ==========================================
@@ -737,8 +833,6 @@ def descargar_dc3_relleno(request, empleado_id):
     # =========================
     # 📌 SUBÁREA SELECCIONADA
     # =========================
-    from .models import SubareaLaboral
-
     texto_area = ""
     texto_subarea = ""
     subarea_id = request.GET.get("subarea_id")
@@ -750,6 +844,21 @@ def descargar_dc3_relleno(request, empleado_id):
             texto_subarea = f"{subarea.codigo} {subarea.nombre}".upper()
         except SubareaLaboral.DoesNotExist:
             pass
+
+    # =========================
+    # 📌 AGENTE / INSTITUCIÓN SELECCIONADA
+    # =========================
+    agente_texto = ""
+    agente_id = request.GET.get("agente_id")
+
+    if agente_id:
+        try:
+            agente = CatalogoAgente.objects.get(id=agente_id)
+            agente_texto = agente.nombre.upper()
+        except CatalogoAgente.DoesNotExist:
+            agente_texto = (registro.rfc_agente_stps or "REGISTRO INTERNO LICONSA").upper()
+    else:
+        agente_texto = (registro.rfc_agente_stps or "REGISTRO INTERNO LICONSA").upper()
 
     # =========================
     # 🧍 NOMBRE COMPLETO
@@ -841,17 +950,21 @@ def descargar_dc3_relleno(request, empleado_id):
         "ocupacion": (registro.clave_ocupacion or "").strip(),
         "empresa": "LECHE PARA EL BIENESTAR LICONSA S.A. DE C.V.",
         "curso": (registro.nombre_curso or "").upper().strip(),
-        "agente": (registro.rfc_agente_stps or "REGISTRO INTERNO LICONSA").upper().strip(),
+        "agente": agente_texto,
         "puesto": puesto_trabajador,
         "area_tematica": area_tematica_curso,
 
-        # Nuevos campos de Área y Subárea laboral
+        # Área y Subárea laboral
         "area_laboral": texto_area,
         "subarea_laboral": texto_subarea,
 
         "duracion_horas": horas_texto,
-        "ano_inicio": ano_ini, "mes_inicio": mes_ini, "dia_inicio": dia_ini,
-        "ano_fin": ano_fin, "mes_fin": mes_fin, "dia_fin": dia_fin,
+        "ano_inicio": ano_ini,
+        "mes_inicio": mes_ini,
+        "dia_inicio": dia_ini,
+        "ano_fin": ano_fin,
+        "mes_fin": mes_fin,
+        "dia_fin": dia_fin,
     }
 
     # CURP letra por letra

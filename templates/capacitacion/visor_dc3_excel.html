@@ -106,7 +106,19 @@
                     {% endfor %}
                 </select>
             </div>
-
+<div class="mb-4">
+    <label for="agente" class="form-label fw-semibold">
+        Agente / Institución capacitadora
+    </label>
+    <select name="agente_id" id="agente" class="form-select form-select-lg" required>
+        <option value="" selected disabled>-- Selecciona un agente o institución --</option>
+        {% for agente in agentes %}
+            <option value="{{ agente.id }}">
+                {{ agente.nombre }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
             <div class="text-end pt-3 border-top">
                 <button type="submit" class="btn btn-primary btn-lg px-5 py-3 shadow-sm d-inline-flex align-items-center gap-3">
                     <i class="bi bi-file-earmark-word-fill fs-4"></i>
@@ -150,4 +162,4 @@ $(function() {
 });
 </script>
 
-{% endblock %}
+{% endblock %} falta dicirme como lo pongo en el word 

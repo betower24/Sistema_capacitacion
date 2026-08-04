@@ -46,38 +46,44 @@ class Curso(models.Model):
     def __str__(self):
         return self.nombre
 
+from django.db import models
+from django.utils import timezone
+
 
 class CursoExcel(models.Model):
-    """
-    Modelo que representa la tabla interactiva tipo Excel en la vista 'cursos_nuevos'.
-    Incluye el campo 'mes' para evitar el error FieldError y permitir el histórico.
-    """
-    no = models.IntegerField(verbose_name="Número")
+    no = models.IntegerField(verbose_name="Número", default=1)
     nombre = models.CharField(max_length=255, verbose_name="Nombre del Curso")
     cantidad = models.IntegerField(default=0, verbose_name="Cantidad")
     constancia = models.IntegerField(default=0, verbose_name="Constancias")
-    
-    # Clasificación de Participantes
+
     operativo = models.IntegerField(default=0, verbose_name="Operativo")
     promotores = models.IntegerField(default=0, verbose_name="Promotores")
     administrativo = models.IntegerField(default=0, verbose_name="Administrativo")
     confianza = models.IntegerField(default=0, verbose_name="Confianza")
-    
-    # Género
+
     hombres = models.IntegerField(default=0, verbose_name="Hombres")
     mujeres = models.IntegerField(default=0, verbose_name="Mujeres")
-    
-    # 🚀 CAMPO CRÍTICO: Segmentación por Meses (Arregla el Internal Server Error)
-    # Almacena "01" para Enero, "02" para Febrero, etc.
-    mes = models.CharField(max_length=2, default="06", verbose_name="Mes del Registro")
+
+    mes = models.CharField(max_length=2, default="01", verbose_name="Mes del Registro")
+    anio = models.IntegerField(default=2026, verbose_name="Año del Registro")
+    fecha_registro = models.DateField(default=timezone.now, verbose_name="Fecha de registro")
 
     class Meta:
         verbose_name = "Curso Excel"
         verbose_name_plural = "Cursos Excel"
+        unique_together = [('nombre', 'mes', 'anio')]
 
     def __str__(self):
-        return f"{self.no} - {self.nombre} (Mes: {self.mes})"
-    
+        return f"{self.no} - {self.nombre} ({self.mes}/{self.anio})"
+
+    @property
+    def total_participantes(self):
+        return (
+            (self.operativo or 0) +
+            (self.promotores or 0) +
+            (self.administrativo or 0) +
+            (self.confianza or 0)
+        )    
 # =========================
 # PLAN DE CAPTURA
 # =========================# =========================
@@ -233,3 +239,13 @@ class SubareaLaboral(models.Model):
 
     def __str__(self):
         return f"{self.codigo} {self.nombre}"
+class CatalogoAgente(models.Model):
+    nombre = models.CharField(max_length=255, unique=True, verbose_name="Nombre / Institución")
+
+    class Meta:
+        verbose_name = "Agente / Institución"
+        verbose_name_plural = "Catálogo de Agentes e Instituciones"
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
