@@ -132,34 +132,36 @@ class PlanCaptura(models.Model):
 # =========================
 # PROGRAMA REAL
 # =========================
+from django.db import models
+
+
 class ProgramaReal(models.Model):
-    # Campo numérico inicial
     no = models.IntegerField(default=1, verbose_name="No.")
-    
-    # Bloque de datos generales
     nombre = models.CharField(max_length=255, verbose_name="Nombre")
     importe = models.FloatField(default=0, verbose_name="Importe")
-    tipo_accion = models.CharField(max_length=100, verbose_name="Tipo de Acción")
-    modalidad = models.CharField(max_length=100, verbose_name="Modalidad")
-    fecha = models.CharField(max_length=100, verbose_name="Fecha")
-    
-    # Instructor y Constancia
-    instructor = models.CharField(max_length=100, verbose_name="Instructor Interno ó Externo")
-    constancia = models.IntegerField(verbose_name="Constancia")
+    tipo_accion = models.CharField(max_length=100, verbose_name="Tipo de Acción", blank=True)
+    modalidad = models.CharField(max_length=100, verbose_name="Modalidad", blank=True)
+    fecha = models.CharField(max_length=255, verbose_name="Fecha", blank=True)
+    instructor = models.CharField(max_length=255, verbose_name="Instructor Interno ó Externo", blank=True)
+    constancia = models.IntegerField(default=0, verbose_name="Constancia")
 
-    # Bloque de participantes (Sindicatos y Confianza)
     operativo = models.IntegerField(default=0, verbose_name="Operativo Sindicalizado")
     promotores = models.IntegerField(default=0, verbose_name="Promotores Sociales")
     administrativo = models.IntegerField(default=0, verbose_name="Administrativo Sindicalizado")
     confianza = models.IntegerField(default=0, verbose_name="Confianza")
 
-    # Propiedad dinámica para el total por fila
     @property
     def total_participantes(self):
-        return self.operativo + self.promotores + self.administrativo + self.confianza
+        return (
+            (self.operativo or 0) +
+            (self.promotores or 0) +
+            (self.administrativo or 0) +
+            (self.confianza or 0)
+        )
 
     def __str__(self):
         return f"{self.no} - {self.nombre}"
+
 
 class Capacitacion(models.Model):
     consecutivo = models.IntegerField(

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container my-4" style="max-width: 640px;">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4">
+            <h4 class="fw-bold mb-1">
+                <i class="bi bi-file-earmark-excel text-success"></i>
+                Carga masiva – Programa Real
+            </h4>
+            <p class="text-muted small mb-4">
+                Sube el Excel oficial (hoja <strong>RELACIÓN_2026</strong>).
+            </p>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Archivo Excel (.xlsx)</label>
+                    <input type="file" name="archivo_excel" class="form-control" accept=".xlsx,.xls" required>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" name="borrar_antes" id="borrar_antes" checked>
+                    <label class="form-check-label" for="borrar_antes">
+                        Borrar registros actuales antes de cargar
+                    </label>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success fw-semibold">
+                        <i class="bi bi-cloud-upload"></i> Cargar al Programa Real
+                    </button>
+                    <a href="{% url 'programa_real' %}" class="btn btn-outline-secondary">
+                        Volver al Programa Real
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -27,16 +27,22 @@
         </div>
     </div>
 
+    <!-- Tabla -->
     <div class="col-12 col-xl-8">
         <div class="card shadow-sm border-0 rounded-4 p-4 bg-white h-100">
-            <div class="d-flex align-items-center justify-content-between mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
                 <div class="d-flex align-items-center">
                     <i class="bi bi-table fs-4 text-primary me-3"></i>
                     <h5 class="fw-bold m-0 text-dark">Registros Capturados</h5>
                 </div>
-                <span class="badge bg-primary rounded-pill px-3 py-2">
-                    {{ registros|length }} Registros
-                </span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary rounded-pill px-3 py-2">
+                        {{ registros|length }} Registros
+                    </span>
+                    <button onclick="descargarPDFCursos()" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF Cursos
+                    </button>
+                </div>
             </div>
 
             <div class="table-responsive">
@@ -95,24 +101,52 @@
             </div>
         </div>
     </div>
-
     <!-- Gráfica -->
     <div class="col-12 col-xl-4">
         <div class="card shadow-sm border-0 rounded-4 p-4 bg-white h-100 d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                 <div class="d-flex align-items-center">
                     <i class="bi bi-pie-chart fs-4 text-primary me-3"></i>
-                    <h5 class="fw-bold m-0 text-dark">Distribución de Participantes</h5>
+                    <h5 class="fw-bold m-0 text-dark">Distribución</h5>
                 </div>
-                <button onclick="descargarPDF()" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-download"></i> PDF Oficial
+                <button onclick="descargarPDFGrafica()" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-download"></i> PDF Gráfica
                 </button>
             </div>
 
-            <p class="text-muted small">Representación por puesto</p>
+            <p class="text-muted small mb-2">Trabajadores que han participado en los cursos</p>
             
-            <div class="flex-grow-1 d-flex align-items-center justify-content-center" style="min-height: 280px;">
+            <div class="flex-grow-1 d-flex align-items-center justify-content-center" style="min-height: 240px;">
                 <canvas id="grafica" width="280" height="280"></canvas>
+            </div>
+
+            <!-- Porcentajes y cantidades -->
+            <div class="mt-3 small" id="resumenParticipantes">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span><span class="badge" style="background:#60a5fa">&nbsp;</span> Operativo Sindicalizado</span>
+                    <strong id="txtOperativo">0 (0%)</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span><span class="badge" style="background:#facc15">&nbsp;</span> Promotores Sociales</span>
+                    <strong id="txtPromotores">0 (0%)</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span><span class="badge" style="background:#d1d5db">&nbsp;</span> Administrativo Sindicalizado</span>
+                    <strong id="txtAdmin">0 (0%)</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span><span class="badge" style="background:#eab308">&nbsp;</span> Confianza</span>
+                    <strong id="txtConfianza">0 (0%)</strong>
+                </div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between fw-bold">
+                    <span>Total de cursos</span>
+                    <span id="txtTotalCursos">{{ registros|length }}</span>
+                </div>
+                <div class="d-flex justify-content-between fw-bold">
+                    <span>Trabajadores que realizaron el curso</span>
+                    <span id="txtTotalTrabajadores">{{ total_general_participantes|default:0 }}</span>
+                </div>
             </div>
         </div>
     </div>
@@ -120,42 +154,74 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-    // Datos desde Django
-    const datosGrafica = {
+    const datos = {
         operativo: {{ totales.total_operativo|default:0 }},
         promotores: {{ totales.total_promotores|default:0 }},
         administrativo: {{ totales.total_administrativo|default:0 }},
         confianza: {{ totales.total_confianza|default:0 }},
         totalCursos: {{ registros|length }},
-        totalTrabajadores: {{ total_general_participantes|default:0 }}
+        totalTrabajadores: {{ total_general_participantes|default:0 }},
+        totalImporte: {{ totales.total_importe|default:0 }}
     };
 
-    let chartInstance;
+    const totalPart = (datos.operativo + datos.promotores + datos.administrativo + datos.confianza) || 0;
+
+    function porcentaje(n) {
+        if (!totalPart) return '0%';
+        return ((n / totalPart) * 100).toFixed(1) + '%';
+    }
+
+    const registrosPDF = [
+        {% for reg in registros %}
+        {
+            no: "{{ reg.no }}",
+            nombre: "{{ reg.nombre|escapejs }}",
+            importe: "{{ reg.importe }}",
+            tipo: "{{ reg.tipo_accion|escapejs }}",
+            modalidad: "{{ reg.modalidad|escapejs }}",
+            fecha: "{{ reg.fecha }}",
+            instructor: "{{ reg.instructor|escapejs }}",
+            operativo: "{{ reg.operativo }}",
+            promotores: "{{ reg.promotores }}",
+            admin: "{{ reg.administrativo }}",
+            confianza: "{{ reg.confianza }}",
+            total: "{{ reg.total_participantes }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
 
     document.addEventListener("DOMContentLoaded", function() {
+        // Formulario
         document.querySelectorAll('.django-form-fields input, .django-form-fields select, .django-form-fields textarea').forEach(el => {
             if (el.tagName === 'SELECT') el.classList.add('form-select', 'py-2');
             else el.classList.add('form-control', 'py-2');
         });
 
-        chartInstance = new Chart(document.getElementById('grafica'), {
+        // Textos con cantidad y porcentaje
+        document.getElementById('txtOperativo').textContent =
+            datos.operativo + ' (' + porcentaje(datos.operativo) + ')';
+        document.getElementById('txtPromotores').textContent =
+            datos.promotores + ' (' + porcentaje(datos.promotores) + ')';
+        document.getElementById('txtAdmin').textContent =
+            datos.administrativo + ' (' + porcentaje(datos.administrativo) + ')';
+        document.getElementById('txtConfianza').textContent =
+            datos.confianza + ' (' + porcentaje(datos.confianza) + ')';
+
+        // Gráfica con % en etiquetas
+        new Chart(document.getElementById('grafica'), {
             type: 'pie',
             data: {
                 labels: [
-                    'OPERATIVO SINDICALIZADO',
-                    'PROMOTORES SOCIALES',
-                    'ADMINISTRATIVO SINDICALIZADO',
-                    'CONFIANZA'
+                    'Operativo ' + porcentaje(datos.operativo),
+                    'Promotores ' + porcentaje(datos.promotores),
+                    'Administrativo ' + porcentaje(datos.administrativo),
+                    'Confianza ' + porcentaje(datos.confianza)
                 ],
                 datasets: [{
-                    data: [
-                        datosGrafica.operativo,
-                        datosGrafica.promotores,
-                        datosGrafica.administrativo,
-                        datosGrafica.confianza
-                    ],
+                    data: [datos.operativo, datos.promotores, datos.administrativo, datos.confianza],
                     backgroundColor: ['#60a5fa', '#facc15', '#d1d5db', '#eab308'],
                     borderColor: '#ffffff',
                     borderWidth: 2
@@ -165,52 +231,125 @@
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { position: 'bottom', labels: { padding: 16, font: { size: 11 } } }
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 12, font: { size: 10 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                const v = ctx.raw || 0;
+                                return ctx.label + ': ' + v + ' (' + porcentaje(v) + ')';
+                            }
+                        }
+                    }
                 }
             }
         });
     });
 
-    function descargarPDF() {
+    // PDF CURSOS (tabla)
+    function descargarPDFCursos() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('l', 'mm', 'letter');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const center = pageWidth / 2;
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.text('Gerencia Metropolitana Norte', center, 15, { align: 'center' });
+        pdf.setFontSize(12);
+        pdf.text('Plan y Programa Real de Capacitación 2026', center, 22, { align: 'center' });
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('Listado de cursos y registros capturados', center, 28, { align: 'center' });
+
+        const filas = registrosPDF.map(r => [
+            r.no, r.nombre, '$' + r.importe, r.tipo, r.modalidad,
+            r.fecha, r.instructor, r.operativo, r.promotores, r.admin, r.confianza, r.total
+        ]);
+
+        filas.push([
+            '', 'TOTALES', '$' + datos.totalImporte, '', '', '', '',
+            String(datos.operativo), String(datos.promotores),
+            String(datos.administrativo), String(datos.confianza),
+            String(datos.totalTrabajadores)
+        ]);
+
+        pdf.autoTable({
+            startY: 34,
+            head: [[
+                'No.', 'Nombre del Curso', 'Importe', 'Tipo Acción', 'Modalidad',
+                'Fecha', 'Instructor', 'Operativo', 'Promotores', 'Admin.', 'Confianza', 'Total'
+            ]],
+            body: filas,
+            styles: { fontSize: 7, cellPadding: 1.5, halign: 'center', valign: 'middle' },
+            headStyles: { fillColor: [0, 48, 135], textColor: 255, fontStyle: 'bold', fontSize: 7 },
+            columnStyles: {
+                1: { halign: 'left', cellWidth: 45 },
+                2: { halign: 'right' },
+                6: { halign: 'left', cellWidth: 30 }
+            },
+            didParseCell: function (data) {
+                if (data.row.index === filas.length - 1) {
+                    data.cell.styles.fontStyle = 'bold';
+                    data.cell.styles.fillColor = [226, 239, 218];
+                }
+            }
+        });
+
+        let y = pdf.lastAutoTable.finalY + 10;
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        pdf.text('TOTAL DE CURSOS: ' + datos.totalCursos, 14, y);
+        pdf.text('TOTAL DE TRABAJADORES: ' + datos.totalTrabajadores, 90, y);
+
+        y += 20;
+        pdf.text('ELABORÓ', 50, y, { align: 'center' });
+        pdf.text('AUTORIZÓ', pageWidth - 50, y, { align: 'center' });
+        y += 16;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.text('C. BLANCA TELLEZ REZA', 50, y, { align: 'center' });
+        pdf.text('LIC. GABRIEL VELARDE REYES', pageWidth - 50, y, { align: 'center' });
+        y += 5;
+        pdf.setFontSize(7);
+        pdf.text('JEFA DE OFICINA DEL DEPTO. RELACIONES INDUSTRIALES', 50, y, { align: 'center' });
+        pdf.text('ENCARGADO DEL DEPTO. RELACIONES INDUSTRIALES', pageWidth - 50, y, { align: 'center' });
+
+        pdf.save('Programa_Real_Listado_Cursos.pdf');
+    }
+
+    // PDF GRÁFICA (con porcentajes)
+    function descargarPDFGrafica() {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'letter');
         const pageWidth = pdf.internal.pageSize.getWidth();
         const center = pageWidth / 2;
 
-        const op = datosGrafica.operativo;
-        const pr = datosGrafica.promotores;
-        const ad = datosGrafica.administrativo;
-        const co = datosGrafica.confianza;
-        const total = op + pr + ad + co || 1;
-
-        const pct = (n) => ((n / total) * 100).toFixed(1) + '%';
-
-        // ===== ENCABEZADO =====
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(14);
         pdf.text('Gerencia Metropolitana Norte', center, 22, { align: 'center' });
 
         pdf.setFontSize(13);
-        pdf.text('Plan y Programa Real de Capacitación a mayo 2026', center, 30, { align: 'center' });
+        pdf.text('Plan y Programa Real de Capacitación 2026', center, 30, { align: 'center' });
 
         pdf.setFontSize(11);
         pdf.text('TRABAJADORES QUE HAN PARTICIPADO EN LOS CURSOS', center, 42, { align: 'center' });
 
-        // ===== GRÁFICA =====
         const canvas = document.getElementById('grafica');
         const imgData = canvas.toDataURL('image/png', 1.0);
-        pdf.addImage(imgData, 'PNG', 35, 48, 140, 110);
+        pdf.addImage(imgData, 'PNG', 35, 48, 140, 105);
 
-        // ===== LEYENDA =====
-        let y = 165;
+        let y = 160;
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
 
         const leyenda = [
-            { color: [96, 165, 250], label: 'OPERATIVO SINDICALIZADO', valor: op, porc: pct(op) },
-            { color: [250, 204, 21], label: 'PROMOTORES SOCIALES', valor: pr, porc: pct(pr) },
-            { color: [209, 213, 219], label: 'ADMINISTRATIVO SINDICALIZADO', valor: ad, porc: pct(ad) },
-            { color: [234, 179, 8], label: 'CONFIANZA', valor: co, porc: pct(co) },
+            { color: [96, 165, 250], label: 'OPERATIVO SINDICALIZADO', valor: datos.operativo },
+            { color: [250, 204, 21], label: 'PROMOTORES SOCIALES', valor: datos.promotores },
+            { color: [209, 213, 219], label: 'ADMINISTRATIVO SINDICALIZADO', valor: datos.administrativo },
+            { color: [234, 179, 8], label: 'CONFIANZA', valor: datos.confianza },
         ];
 
         leyenda.forEach(item => {
@@ -218,22 +357,21 @@
             pdf.rect(40, y - 3, 5, 5, 'F');
             pdf.setTextColor(0, 0, 0);
             pdf.text(item.label, 48, y);
-            pdf.text(String(item.valor), 150, y, { align: 'right' });
+            // cantidad y porcentaje
+            pdf.text(item.valor + '  (' + porcentaje(item.valor) + ')', 170, y, { align: 'right' });
             y += 8;
         });
 
-        // ===== TOTALES =====
         y += 10;
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(11);
         pdf.text('TOTAL DE CURSOS', 40, y);
-        pdf.text(String(datosGrafica.totalCursos), 160, y, { align: 'right' });
+        pdf.text(String(datos.totalCursos), 170, y, { align: 'right' });
 
         y += 8;
         pdf.text('TOTAL DE TRABAJADORES QUE REALIZARON EL CURSO', 40, y);
-        pdf.text(String(datosGrafica.totalTrabajadores), 160, y, { align: 'right' });
+        pdf.text(String(datos.totalTrabajadores), 170, y, { align: 'right' });
 
-        // ===== FIRMAS =====
         y = 245;
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(10);
@@ -251,7 +389,7 @@
         pdf.text('JEFA DE OFICINA DEL DEPTO. RELACIONES INDUSTRIALES', 50, y, { align: 'center' });
         pdf.text('ENCARGADO DEL DEPTO. RELACIONES INDUSTRIALES', 160, y, { align: 'center' });
 
-        pdf.save('Plan_Programa_Real_Capacitacion.pdf');
+        pdf.save('Programa_Real_Grafica_Participantes.pdf');
     }
 </script>
 

@@ -28,7 +28,11 @@ path('plan-captura/visor-dc3-excel/', views.visor_dc3_excel, name='visor_dc3_exc
     path('plan-captura/descargar-dc3-relleno/<int:empleado_id>/', views.descargar_dc3_relleno, name='descargar_dc3_relleno'),
 path('cargar-areas/', views.cargar_areas_tematicas, name='cargar_areas_tematicas'),
     path('descargar-dc3/<int:empleado_id>/', views.descargar_dc3_relleno, name='descargar_dc3_relleno'),
+   # path('cargar-programa-real/', views.cargar_programa_real, name='cargar_programa_real'),
    # path('cargar-ocupaciones/', views.cargar_ocupaciones, name='cargar_ocupaciones'),
+path('programa-real/', views.programa_real, name='programa_real'),
+path('cargar-programa-real/', views.cargar_programa_real, name='cargar_programa_real'),
+
 ]
 
 

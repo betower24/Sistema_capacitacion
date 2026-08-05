@@ -343,6 +343,201 @@ def programa_real(request):
         'form': form, 'registros': registros, 'totales': totales,
         'total_general_participantes': total_general_participantes
     })
+
+import pandas as pd
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import Sum
+from django.shortcuts import render, redirect
+
+from .models import ProgramaReal
+from .forms import ProgramaRealForm
+
+
+def limpiar_numero(valor):
+    if valor is None or (isinstance(valor, float) and pd.isna(valor)):
+        return 0
+    texto = str(valor).strip().replace(',', '')
+    if texto == '' or texto.upper() in ['NAN', 'NONE', 'SIN COSTO', '-']:
+        return 0
+    try:
+        return int(float(texto))
+    except (ValueError, TypeError):
+        return 0
+
+
+def limpiar_importe(valor):
+    if valor is None or (isinstance(valor, float) and pd.isna(valor)):
+        return 0.0
+    texto = str(valor).strip().upper()
+    if texto in ['', 'NAN', 'NONE', 'SIN COSTO', '-']:
+        return 0.0
+    try:
+        return float(str(valor).replace(',', '').replace('$', '').strip())
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def limpiar_texto(valor):
+    if valor is None or (isinstance(valor, float) and pd.isna(valor)):
+        return ''
+    return str(valor).strip()
+
+
+@login_required
+@transaction.atomic
+def cargar_programa_real(request):
+    if request.method == 'POST' and request.FILES.get('archivo_excel'):
+        excel_file = request.FILES['archivo_excel']
+        nombre_archivo = excel_file.name.lower()
+
+        if not nombre_archivo.endswith(('.xlsx', '.xls')):
+            messages.error(request, 'Sube un archivo Excel (.xlsx o .xls).')
+            return redirect('cargar_programa_real')
+
+        try:
+            hojas = pd.read_excel(excel_file, sheet_name=None, header=None)
+
+            nombre_hoja = next(
+                (h for h in hojas.keys() if 'relacion' in h.lower() or 'relación' in h.lower()),
+                list(hojas.keys())[0]
+            )
+            df_raw = hojas[nombre_hoja]
+
+            # Buscar fila de encabezados
+            fila_header = None
+            for i, row in df_raw.iterrows():
+                valores = [str(c).strip().upper() for c in row.values if c is not None]
+                if any('NOMBRE' in v for v in valores) and any(
+                    'OPERATIVO' in v or 'CONSTANCIA' in v for v in valores
+                ):
+                    fila_header = i
+                    break
+
+            if fila_header is None:
+                messages.error(request, 'No se encontró la fila de encabezados en el Excel.')
+                return redirect('cargar_programa_real')
+
+            excel_file.seek(0)
+            df = pd.read_excel(excel_file, sheet_name=nombre_hoja, header=fila_header)
+            df.columns = [str(c).strip().upper().replace('\n', ' ') for c in df.columns]
+
+            def encontrar_columna(*opciones):
+                for opcion in opciones:
+                    for col_name in df.columns:
+                        if opcion in col_name:
+                            return col_name
+                return None
+
+            c_no = encontrar_columna('NO.', 'NO ')
+            c_nombre = encontrar_columna('NOMBRE')
+            c_importe = encontrar_columna('IMPORTE')
+            c_tipo = encontrar_columna('TIPO DE ACCIÓN', 'TIPO DE ACCION', 'TIPO')
+            c_modalidad = encontrar_columna('MODALIDAD')
+            c_fecha = encontrar_columna('FECHA')
+            c_instructor = encontrar_columna('INSTRUCTOR')
+            c_constancia = encontrar_columna('CONSTANCIA')
+            c_operativo = encontrar_columna('OPERATIVO')
+            c_promotores = encontrar_columna('PROMOTORES')
+            c_admin = encontrar_columna('ADMINISTRATIVO SINDICALIZADO', 'ADMINISTRATIVO')
+            c_confianza = encontrar_columna('CONFIANZA')
+
+            # Fallback por posición (Excel oficial)
+            # 0 No, 1 Nombre, 2 Importe, 3 Tipo, 4 Modalidad, 5 Fecha,
+            # 6 Instructor, 7 Constancia, 8 Operativo, 9 Promotores,
+            # 10 Administrativo, 11 Confianza
+            cols = list(df.columns)
+            if c_admin is None and len(cols) >= 11:
+                c_admin = cols[10]
+            if c_operativo is None and len(cols) >= 9:
+                c_operativo = cols[8]
+            if c_promotores is None and len(cols) >= 10:
+                c_promotores = cols[9]
+            if c_confianza is None and len(cols) >= 12:
+                c_confianza = cols[11]
+            if c_constancia is None and len(cols) >= 8:
+                c_constancia = cols[7]
+
+            if not c_nombre:
+                messages.error(request, 'No se encontró la columna NOMBRE.')
+                return redirect('cargar_programa_real')
+
+            borrar_antes = request.POST.get('borrar_antes') == 'on'
+            if borrar_antes:
+                ProgramaReal.objects.all().delete()
+
+            creados = 0
+            for _, row in df.iterrows():
+                nombre_curso = limpiar_texto(row.get(c_nombre) if c_nombre else '')
+                if not nombre_curso:
+                    continue
+                if 'TOTAL' in nombre_curso.upper():
+                    continue
+
+                no_val = limpiar_numero(row.get(c_no)) if c_no else (creados + 1)
+                if no_val == 0:
+                    no_val = creados + 1
+
+                ProgramaReal.objects.create(
+                    no=no_val,
+                    nombre=nombre_curso[:255],
+                    importe=limpiar_importe(row.get(c_importe)) if c_importe else 0.0,
+                    tipo_accion=limpiar_texto(row.get(c_tipo))[:100] if c_tipo else '',
+                    modalidad=limpiar_texto(row.get(c_modalidad))[:100] if c_modalidad else '',
+                    fecha=limpiar_texto(row.get(c_fecha))[:100] if c_fecha else '',
+                    instructor=limpiar_texto(row.get(c_instructor))[:255] if c_instructor else '',
+                    constancia=limpiar_numero(row.get(c_constancia)) if c_constancia else 0,
+                    operativo=limpiar_numero(row.get(c_operativo)) if c_operativo else 0,
+                    promotores=limpiar_numero(row.get(c_promotores)) if c_promotores else 0,
+                    administrativo=limpiar_numero(row.get(c_admin)) if c_admin else 0,
+                    confianza=limpiar_numero(row.get(c_confianza)) if c_confianza else 0,
+                )
+                creados += 1
+
+            messages.success(
+                request,
+                f'¡Éxito! Se cargaron {creados} registros al Programa Real.'
+            )
+            return redirect('programa_real')
+
+        except Exception as e:
+            messages.error(request, f'Error al procesar el Excel: {e}')
+            return redirect('cargar_programa_real')
+
+    return render(request, 'cargar_programa_real.html')
+
+
+@login_required
+@transaction.atomic
+def programa_real(request):
+    form = ProgramaRealForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Registro guardado correctamente.')
+        return redirect('programa_real')
+
+    registros = ProgramaReal.objects.all().order_by('no')
+    totales = registros.aggregate(
+        total_importe=Sum('importe'),
+        total_operativo=Sum('operativo'),
+        total_promotores=Sum('promotores'),
+        total_administrativo=Sum('administrativo'),
+        total_confianza=Sum('confianza'),
+        total_constancia=Sum('constancia'),
+    )
+    total_general_participantes = (
+        (totales['total_operativo'] or 0) +
+        (totales['total_promotores'] or 0) +
+        (totales['total_administrativo'] or 0) +
+        (totales['total_confianza'] or 0)
+    )
+    return render(request, 'programa_real.html', {
+        'form': form,
+        'registros': registros,
+        'totales': totales,
+        'total_general_participantes': total_general_participantes,
+    })
 from django.utils import timezone
 from datetime import datetime
 from django.db.models import Sum

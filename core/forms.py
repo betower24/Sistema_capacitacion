@@ -75,11 +75,32 @@ class PlanCapturaForm(forms.ModelForm):
         }
 
 
+from django import forms
+from .models import ProgramaReal
+
+
 class ProgramaRealForm(forms.ModelForm):
     class Meta:
         model = ProgramaReal
-        fields = '__all__'
-        
+        fields = [
+            'no', 'nombre', 'importe', 'tipo_accion', 'modalidad', 'fecha',
+            'instructor', 'constancia', 'operativo', 'promotores',
+            'administrativo', 'confianza',
+        ]
+        widgets = {
+            'no': forms.NumberInput(attrs={'class': 'form-control'}),
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'importe': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'tipo_accion': forms.TextInput(attrs={'class': 'form-control'}),
+            'modalidad': forms.TextInput(attrs={'class': 'form-control'}),
+            'fecha': forms.TextInput(attrs={'class': 'form-control'}),
+            'instructor': forms.TextInput(attrs={'class': 'form-control'}),
+            'constancia': forms.NumberInput(attrs={'class': 'form-control'}),
+            'operativo': forms.NumberInput(attrs={'class': 'form-control'}),
+            'promotores': forms.NumberInput(attrs={'class': 'form-control'}),
+            'administrativo': forms.NumberInput(attrs={'class': 'form-control'}),
+            'confianza': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
 from .models import Capacitacion
 
 class CapacitacionForm(forms.ModelForm):
