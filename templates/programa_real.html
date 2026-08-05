@@ -15,11 +15,9 @@
             
             <form method="post" autocomplete="off">
                 {% csrf_token %}
-                
                 <div class="django-form-fields horizontal-form-grid">
                     {{ form.as_p }}
                 </div>
-
                 <div class="d-flex justify-content-end mt-4">
                     <button type="submit" class="btn btn-success px-5 py-2.5 fw-semibold shadow-sm rounded-3">
                         <i class="bi bi-save me-2"></i> Guardar Registro
@@ -82,8 +80,6 @@
                             </td>
                         </tr>
                         {% endfor %}
-
-                        <!-- Fila de Totales -->
                         <tr class="table-success fw-bold">
                             <td colspan="2" class="text-start">TOTALES</td>
                             <td>${{ totales.total_importe|default:0 }}</td>
@@ -109,7 +105,7 @@
                     <h5 class="fw-bold m-0 text-dark">Distribución de Participantes</h5>
                 </div>
                 <button onclick="descargarPDF()" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-download"></i> PDF
+                    <i class="bi bi-download"></i> PDF Oficial
                 </button>
             </div>
 
@@ -126,61 +122,136 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
+    // Datos desde Django
+    const datosGrafica = {
+        operativo: {{ totales.total_operativo|default:0 }},
+        promotores: {{ totales.total_promotores|default:0 }},
+        administrativo: {{ totales.total_administrativo|default:0 }},
+        confianza: {{ totales.total_confianza|default:0 }},
+        totalCursos: {{ registros|length }},
+        totalTrabajadores: {{ total_general_participantes|default:0 }}
+    };
+
     let chartInstance;
 
     document.addEventListener("DOMContentLoaded", function() {
-        // Estilizar formulario Django
         document.querySelectorAll('.django-form-fields input, .django-form-fields select, .django-form-fields textarea').forEach(el => {
             if (el.tagName === 'SELECT') el.classList.add('form-select', 'py-2');
             else el.classList.add('form-control', 'py-2');
         });
 
-        // Crear Gráfica
         chartInstance = new Chart(document.getElementById('grafica'), {
             type: 'pie',
             data: {
-                labels: ['Operativo', 'Promotores', 'Administrativo', 'Confianza'],
+                labels: [
+                    'OPERATIVO SINDICALIZADO',
+                    'PROMOTORES SOCIALES',
+                    'ADMINISTRATIVO SINDICALIZADO',
+                    'CONFIANZA'
+                ],
                 datasets: [{
                     data: [
-                        {{ totales.total_operativo|default:0 }},
-                        {{ totales.total_promotores|default:0 }},
-                        {{ totales.total_administrativo|default:0 }},
-                        {{ totales.total_confianza|default:0 }}
+                        datosGrafica.operativo,
+                        datosGrafica.promotores,
+                        datosGrafica.administrativo,
+                        datosGrafica.confianza
                     ],
-                    backgroundColor: ['#3b82f6', '#eab308', '#22c55e', '#ec4899'],
+                    backgroundColor: ['#60a5fa', '#facc15', '#d1d5db', '#eab308'],
                     borderColor: '#ffffff',
-                    borderWidth: 3
+                    borderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { position: 'bottom', labels: { padding: 20, font: { size: 12 } } }
+                    legend: { position: 'bottom', labels: { padding: 16, font: { size: 11 } } }
                 }
             }
         });
     });
 
-    // Función para descargar la gráfica como PDF
     function descargarPDF() {
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(18);
-        pdf.text("Distribución de Participantes - Programa Real", 105, 20, { align: "center" });
+        const pdf = new jsPDF('p', 'mm', 'letter');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const center = pageWidth / 2;
+
+        const op = datosGrafica.operativo;
+        const pr = datosGrafica.promotores;
+        const ad = datosGrafica.administrativo;
+        const co = datosGrafica.confianza;
+        const total = op + pr + ad + co || 1;
+
+        const pct = (n) => ((n / total) * 100).toFixed(1) + '%';
+
+        // ===== ENCABEZADO =====
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.text('Gerencia Metropolitana Norte', center, 22, { align: 'center' });
+
+        pdf.setFontSize(13);
+        pdf.text('Plan y Programa Real de Capacitación a mayo 2026', center, 30, { align: 'center' });
 
         pdf.setFontSize(11);
-        pdf.text("Sistema de Capacitación", 105, 28, { align: "center" });
+        pdf.text('TRABAJADORES QUE HAN PARTICIPADO EN LOS CURSOS', center, 42, { align: 'center' });
 
-        // Convertir canvas a imagen
+        // ===== GRÁFICA =====
         const canvas = document.getElementById('grafica');
-        const imgData = canvas.toDataURL('image/png');
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        pdf.addImage(imgData, 'PNG', 35, 48, 140, 110);
 
-        pdf.addImage(imgData, 'PNG', 30, 40, 150, 150);
+        // ===== LEYENDA =====
+        let y = 165;
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
 
-        pdf.save('Distribucion_Participantes_Programa_Real.pdf');
+        const leyenda = [
+            { color: [96, 165, 250], label: 'OPERATIVO SINDICALIZADO', valor: op, porc: pct(op) },
+            { color: [250, 204, 21], label: 'PROMOTORES SOCIALES', valor: pr, porc: pct(pr) },
+            { color: [209, 213, 219], label: 'ADMINISTRATIVO SINDICALIZADO', valor: ad, porc: pct(ad) },
+            { color: [234, 179, 8], label: 'CONFIANZA', valor: co, porc: pct(co) },
+        ];
+
+        leyenda.forEach(item => {
+            pdf.setFillColor(...item.color);
+            pdf.rect(40, y - 3, 5, 5, 'F');
+            pdf.setTextColor(0, 0, 0);
+            pdf.text(item.label, 48, y);
+            pdf.text(String(item.valor), 150, y, { align: 'right' });
+            y += 8;
+        });
+
+        // ===== TOTALES =====
+        y += 10;
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(11);
+        pdf.text('TOTAL DE CURSOS', 40, y);
+        pdf.text(String(datosGrafica.totalCursos), 160, y, { align: 'right' });
+
+        y += 8;
+        pdf.text('TOTAL DE TRABAJADORES QUE REALIZARON EL CURSO', 40, y);
+        pdf.text(String(datosGrafica.totalTrabajadores), 160, y, { align: 'right' });
+
+        // ===== FIRMAS =====
+        y = 245;
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        pdf.text('ELABORÓ', 50, y, { align: 'center' });
+        pdf.text('AUTORIZÓ', 160, y, { align: 'center' });
+
+        y += 18;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.text('C. BLANCA TELLEZ REZA', 50, y, { align: 'center' });
+        pdf.text('LIC. GABRIEL VELARDE REYES', 160, y, { align: 'center' });
+
+        y += 5;
+        pdf.setFontSize(7);
+        pdf.text('JEFA DE OFICINA DEL DEPTO. RELACIONES INDUSTRIALES', 50, y, { align: 'center' });
+        pdf.text('ENCARGADO DEL DEPTO. RELACIONES INDUSTRIALES', 160, y, { align: 'center' });
+
+        pdf.save('Plan_Programa_Real_Capacitacion.pdf');
     }
 </script>
 
@@ -196,14 +267,8 @@
     @media (min-width: 992px) {
         .horizontal-form-grid { grid-template-columns: repeat(3, 1fr); }
     }
-
-    .card {
-        transition: transform 0.2s ease;
-    }
-    .card:hover {
-        transform: translateY(-4px);
-    }
-
+    .card { transition: transform 0.2s ease; }
+    .card:hover { transform: translateY(-4px); }
     .table th {
         font-weight: 600;
         text-transform: uppercase;
