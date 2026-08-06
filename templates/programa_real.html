@@ -1,151 +1,440 @@
 {% extends 'base.html' %}
 {% block content %}
 
+<style>
+    :root {
+        --pr-primary: #003087;
+        --pr-primary-light: #0052cc;
+        --pr-border: #e2e8f0;
+        --pr-gray: #64748b;
+    }
+
+    .pr-header {
+        background: linear-gradient(135deg, #003087 0%, #0052cc 100%);
+        border-radius: 16px;
+        padding: 1.5rem 1.75rem;
+        color: white;
+        margin-bottom: 1.5rem;
+    }
+
+    .pr-header h4 {
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .pr-card {
+        background: white;
+        border: 1px solid var(--pr-border);
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        height: 100%;
+    }
+
+    .pr-card-body { padding: 1.5rem; }
+
+    .pr-stat {
+        background: white;
+        border: 1px solid var(--pr-border);
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        height: 100%;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .pr-stat:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    }
+
+    .pr-stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .pr-stat-label {
+        font-size: 0.75rem;
+        color: var(--pr-gray);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .pr-stat-value {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+    }
+
+    .pr-table { font-size: 0.82rem; margin: 0; }
+
+    .pr-table thead th {
+        background: #003087 !important;
+        color: white !important;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        padding: 0.75rem 0.45rem;
+        border: none;
+        white-space: nowrap;
+    }
+
+    .pr-table tbody td {
+        padding: 0.6rem 0.45rem;
+        vertical-align: middle;
+        border-color: #f1f5f9;
+    }
+
+    .pr-table tbody tr:hover { background: #f8fafc; }
+
+    .pr-table .fila-totales {
+        background: #ecfdf5 !important;
+        font-weight: 700;
+    }
+
+    .pr-table .fila-totales td { border-top: 2px solid #86efac; }
+
+    .btn-pr-primary {
+        background: var(--pr-primary);
+        border: none;
+        color: white;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 0.6rem 1.4rem;
+    }
+
+    .btn-pr-primary:hover {
+        background: var(--pr-primary-light);
+        color: white;
+    }
+
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+
+    .legend-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.45rem 0;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.85rem;
+    }
+
+    .legend-row:last-child { border-bottom: none; }
+
+    .horizontal-form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+        .horizontal-form-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 992px) {
+        .horizontal-form-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (min-width: 1200px) {
+        .horizontal-form-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .django-form-fields label {
+        display: block;
+        margin-bottom: 0.35rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .django-form-fields p { margin-bottom: 0; }
+
+    .edit-banner {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        color: #9a3412;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+</style>
+
+<!-- Header -->
+<div class="pr-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+        <h4><i class="bi bi-clipboard-data me-2"></i>Programa Real</h4>
+        <p class="mb-0 opacity-75 small">Plan y Programa Real de Capacitación 2026</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'cargar_programa_real' %}" class="btn btn-light btn-sm fw-semibold">
+            <i class="bi bi-file-earmark-excel text-success"></i> Cargar Excel
+        </a>
+        <button type="button" onclick="descargarPDFCursos()" class="btn btn-light btn-sm fw-semibold">
+            <i class="bi bi-file-earmark-pdf text-danger"></i> PDF Cursos
+        </button>
+        <button type="button" onclick="descargarPDFGrafica()" class="btn btn-light btn-sm fw-semibold">
+            <i class="bi bi-pie-chart text-primary"></i> PDF Gráfica
+        </button>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="pr-stat">
+            <div class="pr-stat-icon" style="background:#dbeafe;color:#1d4ed8;"><i class="bi bi-collection"></i></div>
+            <div>
+                <div class="pr-stat-label">Cursos</div>
+                <div class="pr-stat-value">{{ registros|length }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="pr-stat">
+            <div class="pr-stat-icon" style="background:#dcfce7;color:#15803d;"><i class="bi bi-people-fill"></i></div>
+            <div>
+                <div class="pr-stat-label">Trabajadores</div>
+                <div class="pr-stat-value">{{ total_general_participantes|default:0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="pr-stat">
+            <div class="pr-stat-icon" style="background:#e0f2fe;color:#0369a1;"><i class="bi bi-person-badge"></i></div>
+            <div>
+                <div class="pr-stat-label">Operativo</div>
+                <div class="pr-stat-value">{{ totales.total_operativo|default:0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="pr-stat">
+            <div class="pr-stat-icon" style="background:#fef9c3;color:#a16207;"><i class="bi bi-briefcase-fill"></i></div>
+            <div>
+                <div class="pr-stat-label">Confianza</div>
+                <div class="pr-stat-value">{{ totales.total_confianza|default:0 }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4">
     <!-- Formulario -->
     <div class="col-12">
-        <div class="card shadow-sm border-0 rounded-4 p-4 bg-white">
-            <div class="d-flex align-items-center mb-3">
-                <i class="bi bi-clipboard-data fs-3 text-primary me-3"></i>
-                <div>
-                    <h4 class="fw-bold m-0 text-dark">Programa Real</h4>
-                    <p class="text-muted small m-0">Ingresa la información correspondiente para guardar un nuevo registro.</p>
+        <div class="pr-card">
+            <div class="pr-card-body">
+             {% if editando %}
+<div class="alert alert-info">
+    DEBUG: ID={{ registro_editando.id }} |
+    Nombre={{ registro_editando.nombre }} |
+    Operativo={{ registro_editando.operativo }} |
+    Form nombre={{ form.nombre.value }}
+</div>
+{% else %}
+<div class="alert alert-warning">No está en modo edición</div>
+{% endif %}
+
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-{% if editando %}pencil-square{% else %}plus-circle{% endif %} fs-4 text-primary me-2"></i>
+                    <div>
+                        <h5 class="fw-bold m-0">
+                            {% if editando %}Editar registro{% else %}Nuevo registro{% endif %}
+                        </h5>
+                        <p class="text-muted small m-0">
+                            {% if editando %}
+                                Modifica los campos y pulsa Actualizar
+                            {% else %}
+                                Captura manual de un curso del programa real
+                            {% endif %}
+                        </p>
+                    </div>
                 </div>
+
+                <form method="post"
+                      autocomplete="off"
+                      action="{% url 'programa_real' %}{% if editando %}?editar_id={{ registro_editando.id }}{% endif %}">
+                    {% csrf_token %}
+
+                    {% if editando %}
+                        <input type="hidden" name="editar_id" value="{{ registro_editando.id }}">
+                    {% endif %}
+
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>No se pudo guardar. Revisa estos errores:</strong>
+                        <ul class="mb-0 mt-2">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li><strong>{{ field }}</strong>: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="django-form-fields horizontal-form-grid">
+                        {{ form.as_p }}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button type="submit" class="btn {% if editando %}btn-warning text-dark fw-semibold{% else %}btn-pr-primary{% endif %}">
+                            <i class="bi bi-{% if editando %}check-lg{% else %}save{% endif %} me-1"></i>
+                            {% if editando %}Actualizar Registro{% else %}Guardar Registro{% endif %}
+                        </button>
+                        {% if editando %}
+                            <a href="{% url 'programa_real' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        {% endif %}
+                    </div>
+                </form>
             </div>
-            
-            <form method="post" autocomplete="off">
-                {% csrf_token %}
-                <div class="django-form-fields horizontal-form-grid">
-                    {{ form.as_p }}
-                </div>
-                <div class="d-flex justify-content-end mt-4">
-                    <button type="submit" class="btn btn-success px-5 py-2.5 fw-semibold shadow-sm rounded-3">
-                        <i class="bi bi-save me-2"></i> Guardar Registro
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
     <!-- Tabla -->
     <div class="col-12 col-xl-8">
-        <div class="card shadow-sm border-0 rounded-4 p-4 bg-white h-100">
-            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-table fs-4 text-primary me-3"></i>
-                    <h5 class="fw-bold m-0 text-dark">Registros Capturados</h5>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary rounded-pill px-3 py-2">
-                        {{ registros|length }} Registros
+        <div class="pr-card">
+            <div class="pr-card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-table fs-5 text-primary me-2"></i>
+                        <h5 class="fw-bold m-0">Registros capturados</h5>
+                    </div>
+                    <span class="badge rounded-pill px-3 py-2" style="background:#eff6ff;color:#1d4ed8;font-weight:600;">
+                        {{ registros|length }} registros
                     </span>
-                    <button onclick="descargarPDFCursos()" class="btn btn-outline-danger btn-sm">
-                        <i class="bi bi-file-earmark-pdf"></i> PDF Cursos
-                    </button>
                 </div>
-            </div>
 
-            <div class="table-responsive">
-                <table class="table table-hover align-middle m-0" id="registrosTable">
-                    <thead class="table-light">
-                        <tr>
-                            <th>No.</th>
-                            <th>Nombre</th>
-                            <th>Importe</th>
-                            <th>Tipo de Acción</th>
-                            <th>Modalidad</th>
-                            <th>Fecha</th>
-                            <th>Instructor</th>
-                            <th>Operativo</th>
-                            <th>Promotores</th>
-                            <th>Admin.</th>
-                            <th>Confianza</th>
-                            <th class="text-center">Total Part.</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for reg in registros %}
-                        <tr>
-                            <td>{{ reg.no }}</td>
-                            <td class="fw-medium">{{ reg.nombre }}</td>
-                            <td class="text-success fw-semibold">${{ reg.importe }}</td>
-                            <td>{{ reg.tipo_accion }}</td>
-                            <td>{{ reg.modalidad }}</td>
-                            <td>{{ reg.fecha }}</td>
-                            <td>{{ reg.instructor }}</td>
-                            <td class="text-center">{{ reg.operativo }}</td>
-                            <td class="text-center">{{ reg.promotores }}</td>
-                            <td class="text-center">{{ reg.administrativo }}</td>
-                            <td class="text-center">{{ reg.confianza }}</td>
-                            <td class="text-center fw-bold">{{ reg.total_participantes }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="12" class="text-center py-5 text-muted">
-                                No hay registros capturados aún.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        <tr class="table-success fw-bold">
-                            <td colspan="2" class="text-start">TOTALES</td>
-                            <td>${{ totales.total_importe|default:0 }}</td>
-                            <td colspan="4"></td>
-                            <td class="text-center">{{ totales.total_operativo|default:0 }}</td>
-                            <td class="text-center">{{ totales.total_promotores|default:0 }}</td>
-                            <td class="text-center">{{ totales.total_administrativo|default:0 }}</td>
-                            <td class="text-center">{{ totales.total_confianza|default:0 }}</td>
-                            <td class="text-center">{{ total_general_participantes|default:0 }}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-responsive rounded-3 border">
+                    <table class="table pr-table align-middle" id="registrosTable">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Nombre</th>
+                                <th>Importe</th>
+                                <th>Tipo</th>
+                                <th>Modalidad</th>
+                                <th>Fecha</th>
+                                <th>Instructor</th>
+                                <th class="text-center">Oper.</th>
+                                <th class="text-center">Prom.</th>
+                                <th class="text-center">Admin.</th>
+                                <th class="text-center">Conf.</th>
+                                <th class="text-center">Total</th>
+                                <th class="text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reg in registros %}
+                            <tr {% if editando and registro_editando.id == reg.id %}style="background:#fff7ed;"{% endif %}>
+                                <td class="fw-semibold text-secondary">{{ reg.no }}</td>
+                                <td class="fw-medium text-start" style="min-width:160px;">{{ reg.nombre }}</td>
+                                <td class="text-success fw-semibold">
+                                    {% if reg.importe %} ${{ reg.importe }} {% else %} Sin costo {% endif %}
+                                </td>
+                                <td>{{ reg.tipo_accion }}</td>
+                                <td>
+                                    <span class="badge rounded-pill" style="background:#f1f5f9;color:#475569;">
+                                        {{ reg.modalidad }}
+                                    </span>
+                                </td>
+                                <td class="small">{{ reg.fecha }}</td>
+                                <td class="small text-start">{{ reg.instructor }}</td>
+                                <td class="text-center">{{ reg.operativo }}</td>
+                                <td class="text-center">{{ reg.promotores }}</td>
+                                <td class="text-center">{{ reg.administrativo }}</td>
+                                <td class="text-center">{{ reg.confianza }}</td>
+                                <td class="text-center fw-bold">{{ reg.total_participantes }}</td>
+                                <td class="text-center">
+                                    <a href="{% url 'programa_real' %}?editar_id={{ reg.id }}"
+                                       class="btn btn-sm btn-warning py-0 px-2"
+                                       title="Editar">
+                                        ✏️
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="13" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>
+                                    No hay registros capturados aún.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <tr class="fila-totales">
+                                <td colspan="2" class="text-start">TOTALES</td>
+                                <td>${{ totales.total_importe|default:0 }}</td>
+                                <td colspan="4"></td>
+                                <td class="text-center">{{ totales.total_operativo|default:0 }}</td>
+                                <td class="text-center">{{ totales.total_promotores|default:0 }}</td>
+                                <td class="text-center">{{ totales.total_administrativo|default:0 }}</td>
+                                <td class="text-center">{{ totales.total_confianza|default:0 }}</td>
+                                <td class="text-center">{{ total_general_participantes|default:0 }}</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
+
     <!-- Gráfica -->
     <div class="col-12 col-xl-4">
-        <div class="card shadow-sm border-0 rounded-4 p-4 bg-white h-100 d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-pie-chart fs-4 text-primary me-3"></i>
-                    <h5 class="fw-bold m-0 text-dark">Distribución</h5>
+        <div class="pr-card d-flex flex-column">
+            <div class="pr-card-body d-flex flex-column flex-grow-1">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="bi bi-pie-chart fs-5 text-primary me-2"></i>
+                    <h5 class="fw-bold m-0">Distribución</h5>
                 </div>
-                <button onclick="descargarPDFGrafica()" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-download"></i> PDF Gráfica
-                </button>
-            </div>
+                <p class="text-muted small mb-3">Trabajadores que han participado en los cursos</p>
 
-            <p class="text-muted small mb-2">Trabajadores que han participado en los cursos</p>
-            
-            <div class="flex-grow-1 d-flex align-items-center justify-content-center" style="min-height: 240px;">
-                <canvas id="grafica" width="280" height="280"></canvas>
-            </div>
+                <div class="d-flex align-items-center justify-content-center mb-3" style="min-height: 220px;">
+                    <canvas id="grafica" width="260" height="260"></canvas>
+                </div>
 
-            <!-- Porcentajes y cantidades -->
-            <div class="mt-3 small" id="resumenParticipantes">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span><span class="badge" style="background:#60a5fa">&nbsp;</span> Operativo Sindicalizado</span>
-                    <strong id="txtOperativo">0 (0%)</strong>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span><span class="badge" style="background:#facc15">&nbsp;</span> Promotores Sociales</span>
-                    <strong id="txtPromotores">0 (0%)</strong>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span><span class="badge" style="background:#d1d5db">&nbsp;</span> Administrativo Sindicalizado</span>
-                    <strong id="txtAdmin">0 (0%)</strong>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span><span class="badge" style="background:#eab308">&nbsp;</span> Confianza</span>
-                    <strong id="txtConfianza">0 (0%)</strong>
-                </div>
-                <hr class="my-2">
-                <div class="d-flex justify-content-between fw-bold">
-                    <span>Total de cursos</span>
-                    <span id="txtTotalCursos">{{ registros|length }}</span>
-                </div>
-                <div class="d-flex justify-content-between fw-bold">
-                    <span>Trabajadores que realizaron el curso</span>
-                    <span id="txtTotalTrabajadores">{{ total_general_participantes|default:0 }}</span>
+                <div class="mt-auto">
+                    <div class="legend-row">
+                        <span><span class="legend-dot" style="background:#3b82f6"></span>Operativo Sindicalizado</span>
+                        <strong id="txtOperativo">0 (0%)</strong>
+                    </div>
+                    <div class="legend-row">
+                        <span><span class="legend-dot" style="background:#eab308"></span>Promotores Sociales</span>
+                        <strong id="txtPromotores">0 (0%)</strong>
+                    </div>
+                    <div class="legend-row">
+                        <span><span class="legend-dot" style="background:#94a3b8"></span>Administrativo Sindicalizado</span>
+                        <strong id="txtAdmin">0 (0%)</strong>
+                    </div>
+                    <div class="legend-row">
+                        <span><span class="legend-dot" style="background:#f59e0b"></span>Confianza</span>
+                        <strong id="txtConfianza">0 (0%)</strong>
+                    </div>
+                    <div class="legend-row mt-2 pt-2" style="border-top:2px solid #e2e8f0;">
+                        <span class="fw-bold">Total de cursos</span>
+                        <span class="fw-bold">{{ registros|length }}</span>
+                    </div>
+                    <div class="legend-row">
+                        <span class="fw-bold">Trabajadores que realizaron el curso</span>
+                        <span class="fw-bold text-primary">{{ total_general_participantes|default:0 }}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -182,7 +471,7 @@
             importe: "{{ reg.importe }}",
             tipo: "{{ reg.tipo_accion|escapejs }}",
             modalidad: "{{ reg.modalidad|escapejs }}",
-            fecha: "{{ reg.fecha }}",
+            fecha: "{{ reg.fecha|escapejs }}",
             instructor: "{{ reg.instructor|escapejs }}",
             operativo: "{{ reg.operativo }}",
             promotores: "{{ reg.promotores }}",
@@ -193,14 +482,12 @@
         {% endfor %}
     ];
 
-    document.addEventListener("DOMContentLoaded", function() {
-        // Formulario
+    document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll('.django-form-fields input, .django-form-fields select, .django-form-fields textarea').forEach(el => {
-            if (el.tagName === 'SELECT') el.classList.add('form-select', 'py-2');
-            else el.classList.add('form-control', 'py-2');
+            if (el.tagName === 'SELECT') el.classList.add('form-select');
+            else el.classList.add('form-control');
         });
 
-        // Textos con cantidad y porcentaje
         document.getElementById('txtOperativo').textContent =
             datos.operativo + ' (' + porcentaje(datos.operativo) + ')';
         document.getElementById('txtPromotores').textContent =
@@ -210,9 +497,8 @@
         document.getElementById('txtConfianza').textContent =
             datos.confianza + ' (' + porcentaje(datos.confianza) + ')';
 
-        // Gráfica con % en etiquetas
         new Chart(document.getElementById('grafica'), {
-            type: 'pie',
+            type: 'doughnut',
             data: {
                 labels: [
                     'Operativo ' + porcentaje(datos.operativo),
@@ -222,24 +508,23 @@
                 ],
                 datasets: [{
                     data: [datos.operativo, datos.promotores, datos.administrativo, datos.confianza],
-                    backgroundColor: ['#60a5fa', '#facc15', '#d1d5db', '#eab308'],
+                    backgroundColor: ['#3b82f6', '#eab308', '#94a3b8', '#f59e0b'],
                     borderColor: '#ffffff',
-                    borderWidth: 2
+                    borderWidth: 3,
+                    hoverOffset: 8
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                cutout: '55%',
                 plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { padding: 12, font: { size: 10 } }
-                    },
+                    legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: function(ctx) {
+                            label: function (ctx) {
                                 const v = ctx.raw || 0;
-                                return ctx.label + ': ' + v + ' (' + porcentaje(v) + ')';
+                                return ' ' + v + ' personas (' + porcentaje(v) + ')';
                             }
                         }
                     }
@@ -248,7 +533,6 @@
         });
     });
 
-    // PDF CURSOS (tabla)
     function descargarPDFCursos() {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('l', 'mm', 'letter');
@@ -262,7 +546,7 @@
         pdf.text('Plan y Programa Real de Capacitación 2026', center, 22, { align: 'center' });
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
-        pdf.text('Listado de cursos y registros capturados', center, 28, { align: 'center' });
+     
 
         const filas = registrosPDF.map(r => [
             r.no, r.nombre, '$' + r.importe, r.tipo, r.modalidad,
@@ -320,7 +604,6 @@
         pdf.save('Programa_Real_Listado_Cursos.pdf');
     }
 
-    // PDF GRÁFICA (con porcentajes)
     function descargarPDFGrafica() {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'letter');
@@ -330,10 +613,8 @@
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(14);
         pdf.text('Gerencia Metropolitana Norte', center, 22, { align: 'center' });
-
         pdf.setFontSize(13);
         pdf.text('Plan y Programa Real de Capacitación 2026', center, 30, { align: 'center' });
-
         pdf.setFontSize(11);
         pdf.text('TRABAJADORES QUE HAN PARTICIPADO EN LOS CURSOS', center, 42, { align: 'center' });
 
@@ -346,10 +627,10 @@
         pdf.setFont('helvetica', 'normal');
 
         const leyenda = [
-            { color: [96, 165, 250], label: 'OPERATIVO SINDICALIZADO', valor: datos.operativo },
-            { color: [250, 204, 21], label: 'PROMOTORES SOCIALES', valor: datos.promotores },
-            { color: [209, 213, 219], label: 'ADMINISTRATIVO SINDICALIZADO', valor: datos.administrativo },
-            { color: [234, 179, 8], label: 'CONFIANZA', valor: datos.confianza },
+            { color: [59, 130, 246], label: 'OPERATIVO SINDICALIZADO', valor: datos.operativo },
+            { color: [234, 179, 8], label: 'PROMOTORES SOCIALES', valor: datos.promotores },
+            { color: [148, 163, 184], label: 'ADMINISTRATIVO SINDICALIZADO', valor: datos.administrativo },
+            { color: [245, 158, 11], label: 'CONFIANZA', valor: datos.confianza },
         ];
 
         leyenda.forEach(item => {
@@ -357,7 +638,6 @@
             pdf.rect(40, y - 3, 5, 5, 'F');
             pdf.setTextColor(0, 0, 0);
             pdf.text(item.label, 48, y);
-            // cantidad y porcentaje
             pdf.text(item.valor + '  (' + porcentaje(item.valor) + ')', 170, y, { align: 'right' });
             y += 8;
         });
@@ -367,7 +647,6 @@
         pdf.setFontSize(11);
         pdf.text('TOTAL DE CURSOS', 40, y);
         pdf.text(String(datos.totalCursos), 170, y, { align: 'right' });
-
         y += 8;
         pdf.text('TOTAL DE TRABAJADORES QUE REALIZARON EL CURSO', 40, y);
         pdf.text(String(datos.totalTrabajadores), 170, y, { align: 'right' });
@@ -377,13 +656,11 @@
         pdf.setFontSize(10);
         pdf.text('ELABORÓ', 50, y, { align: 'center' });
         pdf.text('AUTORIZÓ', 160, y, { align: 'center' });
-
         y += 18;
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(9);
         pdf.text('C. BLANCA TELLEZ REZA', 50, y, { align: 'center' });
         pdf.text('LIC. GABRIEL VELARDE REYES', 160, y, { align: 'center' });
-
         y += 5;
         pdf.setFontSize(7);
         pdf.text('JEFA DE OFICINA DEL DEPTO. RELACIONES INDUSTRIALES', 50, y, { align: 'center' });
@@ -392,28 +669,5 @@
         pdf.save('Programa_Real_Grafica_Participantes.pdf');
     }
 </script>
-
-<style>
-    .horizontal-form-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1.2rem;
-    }
-    @media (min-width: 768px) {
-        .horizontal-form-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (min-width: 992px) {
-        .horizontal-form-grid { grid-template-columns: repeat(3, 1fr); }
-    }
-    .card { transition: transform 0.2s ease; }
-    .card:hover { transform: translateY(-4px); }
-    .table th {
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.8rem;
-        letter-spacing: 0.5px;
-        color: #475569;
-    }
-</style>
 
 {% endblock %}

@@ -320,30 +320,66 @@ def plan_captura(request):
         return redirect('plan_captura')
     return render(request, 'plan_captura.html', {'form': form, 'registros': registros})
 
-
 @login_required
 @transaction.atomic
 def programa_real(request):
-    form = ProgramaRealForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        return redirect('programa_real')
+    # Leer ID de edición
+    instance_id = request.GET.get('editar_id') or request.POST.get('editar_id')
+    instance = None
+
+    print("===== DEBUG PROGRAMA REAL =====")
+    print("GET editar_id:", request.GET.get('editar_id'))
+    print("POST editar_id:", request.POST.get('editar_id'))
+    print("instance_id:", instance_id)
+
+    if instance_id:
+        try:
+            instance = ProgramaReal.objects.get(pk=int(instance_id))
+            print("Registro encontrado:", instance.id, instance.nombre)
+        except (ProgramaReal.DoesNotExist, ValueError, TypeError) as e:
+            print("Error al buscar registro:", e)
+            instance = None
+
+    if request.method == 'POST':
+        form = ProgramaRealForm(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Registro actualizado correctamente.' if instance else 'Registro guardado correctamente.'
+            )
+            return redirect('programa_real')
+        messages.error(request, 'Revisa los campos del formulario.')
+    else:
+        form = ProgramaRealForm(instance=instance)
+
+    print("editando:", instance is not None)
+    print("===============================")
 
     registros = ProgramaReal.objects.all().order_by('no')
     totales = registros.aggregate(
-        total_importe=Sum('importe'), total_operativo=Sum('operativo'),
-        total_promotores=Sum('promotores'), total_administrative=Sum('administrativo'),
-        total_confianza=Sum('confianza')
+        total_importe=Sum('importe'),
+        total_operativo=Sum('operativo'),
+        total_promotores=Sum('promotores'),
+        total_administrativo=Sum('administrativo'),
+        total_confianza=Sum('confianza'),
+        total_constancia=Sum('constancia'),
     )
     total_general_participantes = (
-        (totales['total_operativo'] or 0) + (totales['total_promotores'] or 0) + 
-        (totales['total_administrative'] or 0) + (totales['total_confianza'] or 0)
+        (totales['total_operativo'] or 0) +
+        (totales['total_promotores'] or 0) +
+        (totales['total_administrativo'] or 0) +
+        (totales['total_confianza'] or 0)
     )
-    return render(request, 'programa_real.html', {
-        'form': form, 'registros': registros, 'totales': totales,
-        'total_general_participantes': total_general_participantes
-    })
 
+    return render(request, 'programa_real.html', {
+        'form': form,
+        'registros': registros,
+        'totales': totales,
+        'total_general_participantes': total_general_participantes,
+        'editando': instance is not None,
+        'registro_editando': instance,
+    })
 import pandas as pd
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -508,36 +544,6 @@ def cargar_programa_real(request):
     return render(request, 'cargar_programa_real.html')
 
 
-@login_required
-@transaction.atomic
-def programa_real(request):
-    form = ProgramaRealForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        messages.success(request, 'Registro guardado correctamente.')
-        return redirect('programa_real')
-
-    registros = ProgramaReal.objects.all().order_by('no')
-    totales = registros.aggregate(
-        total_importe=Sum('importe'),
-        total_operativo=Sum('operativo'),
-        total_promotores=Sum('promotores'),
-        total_administrativo=Sum('administrativo'),
-        total_confianza=Sum('confianza'),
-        total_constancia=Sum('constancia'),
-    )
-    total_general_participantes = (
-        (totales['total_operativo'] or 0) +
-        (totales['total_promotores'] or 0) +
-        (totales['total_administrativo'] or 0) +
-        (totales['total_confianza'] or 0)
-    )
-    return render(request, 'programa_real.html', {
-        'form': form,
-        'registros': registros,
-        'totales': totales,
-        'total_general_participantes': total_general_participantes,
-    })
 from django.utils import timezone
 from datetime import datetime
 from django.db.models import Sum

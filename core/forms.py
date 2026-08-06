@@ -126,4 +126,5 @@ class PlanCapturaForm(forms.ModelForm):
         # Añadimos las clases de Bootstrap de forma automática a cada campo para que se vea premium
         for field in self.fields.values():
             field.widget.attrs.update({'class': 'form-control rounded-3'})
-        
+        #from core.models import Curso
+#Curso.objects.all().delete()
