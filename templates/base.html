@@ -4,20 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión de Capacitación</title>
-    
-    <!-- Bootstrap & Icons -->
+    <title>{% block title %}Sistema de Gestión de Capacitación{% endblock %}</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
-    <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --saap-primary: #003087;
             --saap-primary-light: #0052cc;
-            --saap-primary-dark: #002255;
+            --saap-primary-dark: #001f5c;
             --saap-accent: #00a3e0;
             --gray-50: #f8fafc;
             --gray-100: #f1f5f9;
@@ -25,17 +22,16 @@
             --gray-400: #94a3b8;
             --gray-500: #64748b;
             --gray-600: #475569;
-            --gray-700: #334155;
             --dark: #0f172a;
+            --shadow-nav: 0 1px 0 rgba(15, 23, 42, .04), 0 4px 12px rgba(15, 23, 42, .04);
+            --shadow-card: 0 4px 6px -1px rgba(15, 23, 42, .04), 0 2px 4px -2px rgba(15, 23, 42, .03);
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #f1f5f9;
+            background: linear-gradient(180deg, #eef2f7 0%, #f1f5f9 40%, #f8fafc 100%);
             color: var(--dark);
             min-height: 100vh;
             margin: 0;
@@ -43,94 +39,108 @@
 
         /* ========== NAVBAR ========== */
         .custom-navbar {
-            background: #ffffff;
+            background: rgba(255, 255, 255, .92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--gray-200);
-            padding: 0.75rem 0;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+            padding: .7rem 0;
+            box-shadow: var(--shadow-nav);
         }
 
         .navbar-brand {
             font-weight: 800;
-            font-size: 1.2rem;
-            letter-spacing: -0.03em;
+            font-size: 1.15rem;
+            letter-spacing: -.03em;
             color: var(--saap-primary) !important;
             display: flex;
             align-items: center;
-            gap: 0.6rem;
+            gap: .7rem;
             text-decoration: none;
         }
 
-        .navbar-brand:hover {
-            color: var(--saap-primary-dark) !important;
+        .navbar-brand:hover { color: var(--saap-primary-dark) !important; }
+
+        /* Logo */
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+            border-radius: 10px;
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            padding: 3px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
         }
 
+        /* Fallback si no hay logo */
         .brand-icon-box {
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             background: linear-gradient(135deg, var(--saap-primary), var(--saap-primary-dark));
-            border-radius: 10px;
+            border-radius: 11px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: #fff;
             font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(0, 48, 135, .25);
         }
 
-        .brand-text {
-            line-height: 1.2;
-        }
-
+        .brand-text { line-height: 1.2; }
+        .brand-text span { display: block; }
         .brand-text small {
             display: block;
             font-weight: 500;
-            font-size: 0.7rem;
+            font-size: .68rem;
             color: var(--gray-500);
-            letter-spacing: 0;
+            letter-spacing: .02em;
+            text-transform: uppercase;
         }
 
-        /* User card */
+        /* Usuario */
         .user-profile-card {
             background: var(--gray-50);
-            padding: 0.35rem 0.5rem 0.35rem 0.9rem;
+            padding: .3rem .4rem .3rem .85rem;
             border-radius: 999px;
             border: 1px solid var(--gray-200);
             display: flex;
             align-items: center;
-            gap: 0.65rem;
+            gap: .55rem;
         }
 
         .user-avatar {
             width: 34px;
             height: 34px;
             background: linear-gradient(135deg, var(--saap-primary), var(--saap-primary-dark));
-            color: white;
+            color: #fff;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 0.75rem;
-            letter-spacing: 0.3px;
+            font-size: .72rem;
+            letter-spacing: .3px;
+            flex-shrink: 0;
         }
 
         .btn-panel {
             background: var(--saap-primary);
-            color: white;
+            color: #fff;
             font-weight: 600;
             border: none;
             border-radius: 9px;
-            padding: 0.4rem 0.9rem;
-            font-size: 0.85rem;
+            padding: .4rem .85rem;
+            font-size: .82rem;
             display: inline-flex;
             align-items: center;
-            gap: 0.35rem;
-            transition: all 0.2s ease;
+            gap: .35rem;
+            transition: .2s ease;
             text-decoration: none;
         }
-
         .btn-panel:hover {
             background: var(--saap-primary-dark);
-            color: white;
+            color: #fff;
+            transform: translateY(-1px);
         }
 
         .btn-logout {
@@ -143,83 +153,90 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
-            font-size: 0.95rem;
+            transition: .2s ease;
+            font-size: .95rem;
         }
-
         .btn-logout:hover {
             background: #fecaca;
             color: #991b1b;
         }
 
-        /* Botón Login (usuario no autenticado) */
         .btn-login {
             background: var(--saap-primary);
-            color: white;
+            color: #fff;
             font-weight: 600;
             border: none;
             border-radius: 10px;
-            padding: 0.5rem 1.25rem;
-            font-size: 0.9rem;
+            padding: .5rem 1.2rem;
+            font-size: .88rem;
             display: inline-flex;
             align-items: center;
-            gap: 0.45rem;
-            transition: all 0.2s ease;
+            gap: .45rem;
+            transition: .2s ease;
             text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0, 48, 135, .2);
         }
-
         .btn-login:hover {
             background: var(--saap-primary-dark);
-            color: white;
+            color: #fff;
             transform: translateY(-1px);
         }
 
-        /* ========== CONTENEDOR PRINCIPAL ========== */
+        /* ========== CONTENEDOR ========== */
         .app-container {
-            margin-top: 2rem;
-            margin-bottom: 3.5rem;
-            padding: 2.25rem;
+            margin-top: 1.75rem;
+            margin-bottom: 2.5rem;
+            padding: 1.75rem 2rem;
             background: #ffffff;
-            border-radius: 18px;
+            border-radius: 20px;
             border: 1px solid var(--gray-200);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04),
-                        0 2px 4px -2px rgba(0, 0, 0, 0.03);
+            box-shadow: var(--shadow-card);
+            min-height: 60vh;
         }
 
-        /* Footer sutil */
+        /* ========== FOOTER ========== */
         .app-footer {
             text-align: center;
-            padding: 1.25rem 0 2rem;
+            padding: 1rem 0 1.75rem;
             color: var(--gray-400);
-            font-size: 0.8rem;
+            font-size: .78rem;
+            font-weight: 500;
+        }
+        .app-footer span {
+            color: var(--gray-500);
         }
 
         @media (max-width: 768px) {
             .app-container {
-                padding: 1.35rem 1.15rem;
-                margin-top: 1.25rem;
-                border-radius: 14px;
+                padding: 1.25rem 1rem;
+                margin-top: 1.1rem;
+                border-radius: 16px;
             }
-
             .user-profile-card {
-                padding: 0.3rem 0.4rem 0.3rem 0.75rem;
+                padding: .28rem .35rem .28rem .7rem;
             }
-
-            .brand-text span {
-                font-size: 1rem;
+            .brand-text span { font-size: .95rem; }
+            .brand-logo, .brand-icon-box {
+                width: 36px;
+                height: 36px;
             }
         }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 
 <body>
-    <!-- Navbar -->
     <nav class="navbar custom-navbar sticky-top">
         <div class="container container-xl">
-            <a class="navbar-brand" href="/">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">
+                {# ===== LOGO: descomenta cuando tengas el archivo ===== #}
+                {# <img src="{% static 'img/logo.png' %}" alt="Logo" class="brand-logo"> #}
+
+                {# Fallback mientras no hay logo #}
                 <div class="brand-icon-box">
                     <i class="bi bi-mortarboard-fill"></i>
                 </div>
+
                 <div class="brand-text">
                     <span>Capacitación</span>
                     <small>Sistema de Gestión</small>
@@ -229,7 +246,7 @@
             <div class="ms-auto d-flex align-items-center">
                 {% if user.is_authenticated %}
                 <div class="user-profile-card">
-                    <span class="text-muted d-none d-md-inline" style="font-size: 0.875rem;">
+                    <span class="text-muted d-none d-md-inline" style="font-size: .85rem;">
                         Hola, <strong class="text-dark">{{ user.get_full_name|default:user.username }}</strong>
                     </span>
 
@@ -250,7 +267,6 @@
                     </div>
                 </div>
                 {% else %}
-                <!-- Botón de Inicio de Sesión -->
                 <a href="{% url 'login' %}" class="btn-login">
                     <i class="bi bi-box-arrow-in-right"></i>
                     Iniciar Sesión
@@ -260,7 +276,6 @@
         </div>
     </nav>
 
-    <!-- Contenido -->
     <div class="container container-xl">
         <div class="app-container">
             {% block content %}
@@ -281,23 +296,21 @@
         </div>
     </div>
 
-    <!-- Footer -->
     <div class="app-footer">
-        Sistema de Gestión de Capacitación &copy; {% now "Y" %}
+        Sistema de Gestión de Capacitación &copy; <span>{% now "Y" %}</span>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             {% if messages %}
                 {% for message in messages %}
                     Swal.fire({
-                        title: "{% if message.tags == 'success' %}¡Éxito!{% else %}Atención{% endif %}",
+                        title: "{% if message.tags == 'success' %}¡Éxito!{% elif message.tags == 'error' %}Error{% else %}Atención{% endif %}",
                         text: "{{ message|escapejs }}",
-                        icon: "{% if message.tags == 'success' %}success{% else %}info{% endif %}",
+                        icon: "{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% else %}info{% endif %}",
                         confirmButtonColor: '#003087'
                     });
                 {% endfor %}
@@ -307,7 +320,7 @@
         function confirmarSalida() {
             Swal.fire({
                 title: '¿Cerrar sesión?',
-                text: "Se cerrará la sesión actual.",
+                text: 'Se cerrará la sesión actual.',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#dc2626',
@@ -321,5 +334,6 @@
             });
         }
     </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

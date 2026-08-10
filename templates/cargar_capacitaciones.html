@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container my-4" style="max-width:640px;">
+    <div class="card shadow-sm border-0 rounded-4 p-4">
+        <h4 class="fw-bold mb-2">
+            <i class="bi bi-file-earmark-excel text-success"></i>
+            Cargar Excel — Reporte Trimestral
+        </h4>
+        <p class="text-muted small">
+            Sube el archivo del 3er trimestre / Formato 1159 (.xlsx o .xlsm).
+        </p>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Archivo Excel</label>
+                <input type="file" name="archivo_excel" class="form-control"
+                       accept=".xlsx,.xls,.xlsm" required>
+            </div>
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" name="borrar_antes" id="borrar" checked>
+                <label class="form-check-label" for="borrar">
+                    Borrar registros actuales antes de cargar
+                </label>
+            </div>
+            <button type="submit" class="btn btn-success w-100 fw-semibold">Cargar capacitaciones</button>
+            <a href="{% url 'capacitaciones' %}" class="btn btn-outline-secondary w-100 mt-2">Volver</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

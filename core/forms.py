@@ -42,12 +42,13 @@ class CursoExcelForm(forms.ModelForm):
     class Meta:
         model = CursoExcel
         fields = [
-            'no', 'nombre', 'cantidad', 'constancia',
+            'no', 'nombre', 'fecha', 'cantidad', 'constancia',
             'operativo', 'promotores', 'administrativo', 'confianza',
             'hombres', 'mujeres'
         ]
         widgets = {
             'no': forms.NumberInput(attrs={'class': 'form-control'}),
+            'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
             'constancia': forms.NumberInput(attrs={'class': 'form-control'}),
             'operativo': forms.NumberInput(attrs={'class': 'form-control'}),
@@ -64,7 +65,6 @@ class CursoExcelForm(forms.ModelForm):
         opciones = [('', '-- Selecciona un curso --')]
         opciones += [(c.nombre, c.nombre) for c in cursos]
         self.fields['nombre'].choices = opciones
-
 class PlanCapturaForm(forms.ModelForm):
     class Meta:
         model = PlanCaptura
@@ -101,20 +101,38 @@ class ProgramaRealForm(forms.ModelForm):
             'administrativo': forms.NumberInput(attrs={'class': 'form-control'}),
             'confianza': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+from django import forms
+from .models import Capacitacion
+
+from django import forms
 from .models import Capacitacion
 
 class CapacitacionForm(forms.ModelForm):
     class Meta:
         model = Capacitacion
         fields = [
-            'consecutivo', 
-            'nombre_tipo_capacitacion', 
-            'participantes_operativos', 
-            'hombres', 
-            'mujeres', 
-            'fortalecimiento_desempenio'
+            'consecutivo', 'nombre_tipo_capacitacion', 'tipo_capacitacion', 'modalidad', 'numero_acciones',
+            'participantes_operativos', 'participantes_enlace', 'participantes_mandos_medios',
+            'participantes_mandos_superiores', 'participantes_categorias_especiales',
+            'induccion', 'fortalecimiento_desempenio', 'actualizacion', 'desarrollo',
+            'certificacion', 'sensibilizacion',
+            'hombres', 'mujeres',
         ]
-        from .models import PlanCaptura
+        widgets = {
+            field: forms.NumberInput(attrs={'class': 'form-control'})
+            for field in [
+                'consecutivo', 'numero_acciones',
+                'participantes_operativos', 'participantes_enlace', 'participantes_mandos_medios',
+                'participantes_mandos_superiores', 'participantes_categorias_especiales',
+                'induccion', 'fortalecimiento_desempenio', 'actualizacion', 'desarrollo',
+                'certificacion', 'sensibilizacion', 'hombres', 'mujeres',
+            ]
+        }
+        widgets.update({
+            'nombre_tipo_capacitacion': forms.TextInput(attrs={'class': 'form-control'}),
+            'tipo_capacitacion': forms.TextInput(attrs={'class': 'form-control'}),
+            'modalidad': forms.TextInput(attrs={'class': 'form-control'}),
+        })
 
 class PlanCapturaForm(forms.ModelForm):
     class Meta:

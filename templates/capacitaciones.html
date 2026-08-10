@@ -1,31 +1,59 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div class="container my-4">
-    <h3 class="mb-2">Registro de Capacitaciones</h3>
-    <p class="text-muted">Captura y consulta la matriz de participantes capacitados.</p>
+<div class="container-fluid my-4 px-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h3 class="mb-1">Registro de Capacitaciones</h3>
+            <p class="text-muted mb-0">Formato 1159 — Reporte Trimestral PAC</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'cargar_capacitaciones' %}" class="btn btn-outline-success btn-sm fw-semibold">
+                <i class="bi bi-file-earmark-excel"></i> Cargar Excel Trimestral
+            </a>
+            <button type="button" id="btnPDF" class="btn btn-danger btn-sm fw-semibold">
+                <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+            </button>
+        </div>
+    </div>
 
     <!-- Formulario -->
     <div class="card mb-4 p-3 {% if editando %}border-warning{% else %}border-0{% endif %} shadow-sm">
-        <h5 class="card-title text-uppercase fw-bold">
-            {% if editando %}✏️ Editando Capacitación{% else %}➕ Nueva Capacitación{% endif %}
+        <h5 class="fw-bold">
+            {% if editando %}
+                ✏️ Editando #{{ registro_editando.consecutivo }} — {{ registro_editando.nombre_tipo_capacitacion }}
+            {% else %}
+                ➕ Nueva Capacitación
+            {% endif %}
         </h5>
-        <form method="post" autocomplete="off">
+        <form method="post" autocomplete="off"
+              action="{% url 'capacitaciones' %}{% if editando and registro_editando %}?editar_id={{ registro_editando.id }}{% endif %}">
             {% csrf_token %}
-            <div class="row g-3">
+            {% if editando and registro_editando %}
+                <input type="hidden" name="editar_id" value="{{ registro_editando.id }}">
+            {% endif %}
+
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    {% for field, errors in form.errors.items %}
+                        {% for e in errors %}<li>{{ field }}: {{ e }}</li>{% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="row g-2">
                 {% for field in form %}
-                <div class="col-md-4 col-lg-3">
-                    <label class="form-label fw-semibold small text-secondary">{{ field.label }}</label>
+                <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+                    <label class="form-label fw-semibold small text-secondary mb-1">{{ field.label }}</label>
                     {{ field }}
-                    {% if field.errors %}
-                        <div class="text-danger small">{{ field.errors }}</div>
-                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
             <div class="mt-3 d-flex gap-2">
                 <button type="submit" class="btn {% if editando %}btn-warning{% else %}btn-primary{% endif %} fw-semibold">
-                    {% if editando %}Actualizar{% else %}Guardar Registro{% endif %}
+                    {% if editando %}Actualizar{% else %}Guardar{% endif %}
                 </button>
                 {% if editando %}
                 <a href="{% url 'capacitaciones' %}" class="btn btn-secondary">Cancelar</a>
@@ -34,124 +62,103 @@
         </form>
     </div>
 
-    <!-- Filtro -->
-    <div class="card mb-3 p-3 shadow-sm border-0">
-        <div class="row align-items-center g-2">
-            <div class="col-md-6">
-                <label class="form-label fw-semibold mb-1">
-                    <i class="bi bi-funnel"></i> Filtrar capacitaciones
-                </label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                    <input type="text" id="filtroCap" class="form-control" placeholder="Escribe el nombre...">
-                </div>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-semibold mb-1">Resultados</label>
-                <div class="form-control-plaintext">
-                    <span id="contadorResultados" class="badge bg-primary">—</span> registros
-                </div>
-            </div>
-            <div class="col-md-3 text-md-end">
-                <button type="button" id="btnLimpiarFiltro" class="btn btn-outline-secondary btn-sm mt-4">
-                    Limpiar filtro
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Contadores -->
-    <div class="row g-3 mb-3">
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted small">Registros</div>
-                    <div class="fs-4 fw-bold">{{ registros|length }}</div>
-                </div>
-            </div>
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm"><div class="card-body py-2">
+                <div class="text-muted small">Registros</div>
+                <div class="fs-4 fw-bold">{{ registros|length }}</div>
+            </div></div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted small">Total participantes</div>
-                    <div class="fs-4 fw-bold">{{ total_participantes|default:0 }}</div>
-                </div>
-            </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm"><div class="card-body py-2">
+                <div class="text-muted small">Total H+M</div>
+                <div class="fs-4 fw-bold">{{ total_participantes|default:0 }}</div>
+            </div></div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted small">Total hombres</div>
-                    <div class="fs-4 fw-bold text-info">{{ totales.total_hombres|default:0 }}</div>
-                </div>
-            </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm"><div class="card-body py-2">
+                <div class="text-muted small">Hombres</div>
+                <div class="fs-4 fw-bold text-info">{{ totales.total_hombres|default:0 }}</div>
+            </div></div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted small">Total mujeres</div>
-                    <div class="fs-4 fw-bold text-danger">{{ totales.total_mujeres|default:0 }}</div>
-                </div>
-            </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm"><div class="card-body py-2">
+                <div class="text-muted small">Mujeres</div>
+                <div class="fs-4 fw-bold text-danger">{{ totales.total_mujeres|default:0 }}</div>
+            </div></div>
         </div>
     </div>
 
-    <!-- Tabla -->
-    <div class="card shadow-sm border-0 p-3">
+    <!-- Tabla completa -->
+    <div class="card shadow-sm border-0 p-2">
         <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle text-center small mb-0">
                 <thead>
-                    <tr class="table-primary">
-                        <th class="bg-primary text-white">Consecutivo</th>
-                        <th class="bg-primary text-white text-start">Nombre Tipo Capacitación</th>
-                        <th class="bg-primary text-white">Participantes Operativos</th>
-                        <th class="bg-info text-dark">Hombres</th>
-                        <th class="bg-danger text-white">Mujeres</th>
-                        <th class="bg-warning text-dark">Total H+M</th>
-                        <th class="bg-secondary text-white">Fortalecimiento del Desempeño</th>
+                    <tr>
+                        <th class="bg-primary text-white">No.</th>
+                        <th class="bg-primary text-white text-start">Nombre</th>
+                        <th class="bg-primary text-white">Operat.</th>
+                        <th class="bg-primary text-white">Enlace</th>
+                        <th class="bg-primary text-white">M.Medios</th>
+                        <th class="bg-primary text-white">M.Sup.</th>
+                        <th class="bg-primary text-white">Cat.Esp.</th>
+                        <th class="bg-secondary text-white">Induc.</th>
+                        <th class="bg-secondary text-white">Fortalec.</th>
+                        <th class="bg-secondary text-white">Actual.</th>
+                        <th class="bg-secondary text-white">Desarr.</th>
+                        <th class="bg-secondary text-white">Certif.</th>
+                        <th class="bg-secondary text-white">Sensib.</th>
+                        <th class="bg-info text-dark">H</th>
+                        <th class="bg-danger text-white">M</th>
+                        <th class="bg-warning text-dark">H+M</th>
                         <th class="bg-dark text-white">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for reg in registros %}
-                    <tr class="fila-cap" data-nombre="{{ reg.nombre_tipo_capacitacion|lower }}">
+                    <tr>
                         <td class="fw-bold">{{ reg.consecutivo }}</td>
-                        <td class="text-start fw-medium">
-                            {{ reg.nombre_tipo_capacitacion }}
-                            <div class="mt-1">
-                                <span class="badge text-bg-info">H: {{ reg.hombres|default:0 }}</span>
-                                <span class="badge text-bg-danger">M: {{ reg.mujeres|default:0 }}</span>
-                            </div>
-                        </td>
-                        <td>{{ reg.participantes_operativos|default:0 }}</td>
-                        <td class="text-info fw-bold">{{ reg.hombres|default:0 }}</td>
-                        <td class="text-danger fw-bold">{{ reg.mujeres|default:0 }}</td>
+                        <td class="text-start">{{ reg.nombre_tipo_capacitacion }}</td>
+                        <td>{{ reg.participantes_operativos }}</td>
+                        <td>{{ reg.participantes_enlace }}</td>
+                        <td>{{ reg.participantes_mandos_medios }}</td>
+                        <td>{{ reg.participantes_mandos_superiores }}</td>
+                        <td>{{ reg.participantes_categorias_especiales }}</td>
+                        <td>{{ reg.induccion }}</td>
+                        <td>{{ reg.fortalecimiento_desempenio }}</td>
+                        <td>{{ reg.actualizacion }}</td>
+                        <td>{{ reg.desarrollo }}</td>
+                        <td>{{ reg.certificacion }}</td>
+                        <td>{{ reg.sensibilizacion }}</td>
+                        <td class="text-info fw-bold">{{ reg.hombres }}</td>
+                        <td class="text-danger fw-bold">{{ reg.mujeres }}</td>
+                        <td><span class="badge bg-warning text-dark">{{ reg.total_participantes }}</span></td>
                         <td>
-                            <span class="badge bg-warning text-dark">
-                                {{ reg.total_participantes|default:0 }}
-                            </span>
-                        </td>
-                        <td>{{ reg.fortalecimiento_desempenio|default:0 }}</td>
-                        <td>
-                            <a href="?editar_id={{ reg.id }}" class="btn btn-sm btn-warning">✏️ Editar</a>
+                            <a href="?editar_id={{ reg.id }}" class="btn btn-sm btn-warning py-0">✏️</a>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center py-5 text-muted">
-                            No hay datos capturados todavía.
-                        </td>
-                    </tr>
+                    <tr><td colspan="17" class="text-muted py-4">Sin datos. Carga el Excel del trimestre.</td></tr>
                     {% endfor %}
                 </tbody>
                 <tfoot>
                     <tr class="fw-bold table-light">
                         <td colspan="2" class="text-start">TOTALES</td>
                         <td>{{ totales.total_operativos|default:0 }}</td>
-                        <td class="text-info">{{ totales.total_hombres|default:0 }}</td>
-                        <td class="text-danger">{{ totales.total_mujeres|default:0 }}</td>
-                        <td>{{ total_participantes|default:0 }}</td>
+                        <td>{{ totales.total_enlace|default:0 }}</td>
+                        <td>{{ totales.total_mandos_medios|default:0 }}</td>
+                        <td>{{ totales.total_mandos_superiores|default:0 }}</td>
+                        <td>{{ totales.total_categorias|default:0 }}</td>
+                        <td>{{ totales.total_induccion|default:0 }}</td>
                         <td>{{ totales.total_fortalecimiento|default:0 }}</td>
+                        <td>{{ totales.total_actualizacion|default:0 }}</td>
+                        <td>{{ totales.total_desarrollo|default:0 }}</td>
+                        <td>{{ totales.total_certificacion|default:0 }}</td>
+                        <td>{{ totales.total_sensibilizacion|default:0 }}</td>
+                        <td>{{ totales.total_hombres|default:0 }}</td>
+                        <td>{{ totales.total_mujeres|default:0 }}</td>
+                        <td>{{ total_participantes|default:0 }}</td>
                         <td></td>
                     </tr>
                 </tfoot>
@@ -160,32 +167,105 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const input = document.getElementById('filtroCap');
-    const btnLimpiar = document.getElementById('btnLimpiarFiltro');
-    const contador = document.getElementById('contadorResultados');
-    const filas = document.querySelectorAll('tr.fila-cap');
-
-    function filtrar() {
-        const texto = (input.value || '').toLowerCase().trim();
-        let visibles = 0;
-        filas.forEach(function (fila) {
-            const nombre = fila.getAttribute('data-nombre') || '';
-            const coincide = !texto || nombre.includes(texto);
-            fila.style.display = coincide ? '' : 'none';
-            if (coincide) visibles++;
-        });
-        contador.textContent = visibles;
-    }
-
-    input.addEventListener('input', filtrar);
-    btnLimpiar.addEventListener('click', function () {
-        input.value = '';
-        filtrar();
-        input.focus();
+    document.querySelectorAll('form input, form select, form textarea').forEach(function (el) {
+        if (el.type === 'hidden') return;
+        if (el.tagName === 'SELECT') el.classList.add('form-select');
+        else if (!el.classList.contains('form-control')) el.classList.add('form-control');
     });
-    contador.textContent = filas.length;
+
+    const btnPDF = document.getElementById('btnPDF');
+    if (!btnPDF) return;
+
+    btnPDF.addEventListener('click', function () {
+        if (!window.jspdf) {
+            alert('No se cargó jsPDF. Recarga la página.');
+            return;
+        }
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('l', 'mm', 'letter');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const center = pageWidth / 2;
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(13);
+        pdf.text('Gerencia Metropolitana Norte', center, 12, { align: 'center' });
+        pdf.setFontSize(11);
+        pdf.text('Seguimiento al Programa Anual de Capacitacion (PAC)', center, 18, { align: 'center' });
+        pdf.setFontSize(10);
+        pdf.text('Reporte Trimestral - Formato 1159', center, 24, { align: 'center' });
+
+        const body = [
+            {% for reg in registros %}
+            [
+                "{{ reg.consecutivo }}",
+                "{{ reg.nombre_tipo_capacitacion|escapejs }}",
+                "{{ reg.participantes_operativos }}",
+                "{{ reg.participantes_enlace }}",
+                "{{ reg.participantes_mandos_medios }}",
+                "{{ reg.participantes_mandos_superiores }}",
+                "{{ reg.participantes_categorias_especiales }}",
+                "{{ reg.induccion }}",
+                "{{ reg.fortalecimiento_desempenio }}",
+                "{{ reg.actualizacion }}",
+                "{{ reg.desarrollo }}",
+                "{{ reg.certificacion }}",
+                "{{ reg.sensibilizacion }}",
+                "{{ reg.hombres }}",
+                "{{ reg.mujeres }}",
+                "{{ reg.total_participantes }}"
+            ]{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        body.push([
+            "", "TOTALES",
+            "{{ totales.total_operativos|default:0 }}",
+            "{{ totales.total_enlace|default:0 }}",
+            "{{ totales.total_mandos_medios|default:0 }}",
+            "{{ totales.total_mandos_superiores|default:0 }}",
+            "{{ totales.total_categorias|default:0 }}",
+            "{{ totales.total_induccion|default:0 }}",
+            "{{ totales.total_fortalecimiento|default:0 }}",
+            "{{ totales.total_actualizacion|default:0 }}",
+            "{{ totales.total_desarrollo|default:0 }}",
+            "{{ totales.total_certificacion|default:0 }}",
+            "{{ totales.total_sensibilizacion|default:0 }}",
+            "{{ totales.total_hombres|default:0 }}",
+            "{{ totales.total_mujeres|default:0 }}",
+            "{{ total_participantes|default:0 }}"
+        ]);
+
+        pdf.autoTable({
+            startY: 28,
+            head: [[
+                "No.", "Nombre", "Oper.", "Enlace", "M.Med", "M.Sup", "Cat.",
+                "Ind.", "Fort.", "Act.", "Des.", "Cer.", "Sen.",
+                "H", "M", "H+M"
+            ]],
+            body: body,
+            styles: { fontSize: 6.5, cellPadding: 1.2, halign: "center" },
+            headStyles: { fillColor: [0, 48, 135], textColor: 255, fontStyle: "bold", fontSize: 6.5 },
+            columnStyles: { 1: { halign: "left", cellWidth: 45 } },
+            didParseCell: function (data) {
+                if (data.row.index === body.length - 1) {
+                    data.cell.styles.fontStyle = "bold";
+                    data.cell.styles.fillColor = [226, 239, 218];
+                }
+            }
+        });
+
+        let y = pdf.lastAutoTable.finalY + 10;
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(9);
+        pdf.text("Registros: {{ registros|length }}   |   Participantes H+M: {{ total_participantes|default:0 }}   |   H: {{ totales.total_hombres|default:0 }}   |   M: {{ totales.total_mujeres|default:0 }}", 14, y);
+
+        
+        pdf.save("Reporte_Trimestral_Formato_1159.pdf");
+    });
 });
 </script>
 

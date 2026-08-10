@@ -87,3 +87,7 @@ def cargar_datos():
 
 if __name__ == '__main__':
     cargar_datos()
+
+    #from core.models import Curso
+#Curso.objects.all().delete()
+    #

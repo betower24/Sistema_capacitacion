@@ -29,6 +29,15 @@ from .models import (
     PlanCaptura, ProgramaReal, CursoExcel, Capacitacion, Curso, 
     CargaSTPS, AreaTematica, AreaLaboral, SubareaLaboral, CatalogoAgente
 )
+import pandas as pd
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import Sum
+from django.shortcuts import render, redirect
+
+from .forms import CapacitacionForm
+from .models import Capacitacion
 # ==========================================
 # FUNCIÓN AUXILIAR: ESTILIZAR REPORTES EXCEL
 # ==========================================
@@ -553,8 +562,6 @@ from django.contrib import messages
 from django.db import transaction
 from .models import CursoExcel
 from .forms import CursoExcelForm
-
-
 @login_required
 @transaction.atomic
 def cursos_nuevos(request):
@@ -569,31 +576,39 @@ def cursos_nuevos(request):
     }
     nombre_mes = meses_dict.get(mes_seleccionado, 'MES NO VÁLIDO')
 
-    instance_id = request.GET.get('editar_id')
-    instance = get_object_or_404(CursoExcel, id=instance_id) if instance_id else None
+    instance_id = request.POST.get('editar_id') or request.GET.get('editar_id')
+    instance = None
+    if instance_id:
+        try:
+            instance = CursoExcel.objects.get(pk=int(instance_id))
+        except (CursoExcel.DoesNotExist, ValueError, TypeError):
+            instance = None
 
     if request.method == 'POST':
         form = CursoExcelForm(request.POST, instance=instance)
         if form.is_valid():
             datos = form.cleaned_data
             nombre_curso = datos['nombre']
+            fecha_curso = datos.get('fecha')
 
             if instance:
-                # Edición manual de un registro
                 registro = form.save(commit=False)
                 registro.fecha_registro = timezone.now().date()
+                if fecha_curso:
+                    registro.mes = str(fecha_curso.month).zfill(2)
+                    registro.anio = fecha_curso.year
                 registro.save()
                 messages.success(request, "Registro actualizado correctamente.")
             else:
-                # Buscar si ya existe el mismo curso en este mes/año
-                registro_existente = CursoExcel.objects.filter(
-                    nombre=nombre_curso,
-                    mes=mes_seleccionado,
-                    anio=anio_seleccionado
-                ).first()
+                # Misma fecha + mismo curso → sumar; otra fecha → nueva fila
+                registro_existente = None
+                if fecha_curso:
+                    registro_existente = CursoExcel.objects.filter(
+                        nombre=nombre_curso,
+                        fecha=fecha_curso
+                    ).first()
 
                 if registro_existente:
-                    # SUMAR a la fila existente (no crear otra)
                     registro_existente.cantidad += datos.get('cantidad') or 0
                     registro_existente.constancia += datos.get('constancia') or 0
                     registro_existente.operativo += datos.get('operativo') or 0
@@ -606,40 +621,50 @@ def cursos_nuevos(request):
                     registro_existente.save()
                     messages.success(
                         request,
-                        f"Se actualizó «{nombre_curso}»: se sumaron los nuevos participantes."
+                        f"Se actualizó «{nombre_curso}» del {fecha_curso}: se sumaron participantes."
                     )
                 else:
-                    # Primer registro de ese curso en el mes
                     nuevo = form.save(commit=False)
-                    nuevo.mes = mes_seleccionado
-                    nuevo.anio = anio_seleccionado
                     nuevo.fecha_registro = timezone.now().date()
+                    if fecha_curso:
+                        nuevo.mes = str(fecha_curso.month).zfill(2)
+                        nuevo.anio = fecha_curso.year
+                    else:
+                        nuevo.mes = mes_seleccionado
+                        nuevo.anio = anio_seleccionado
 
-                    if not nuevo.no:
-                        ultimo = CursoExcel.objects.filter(
-                            mes=mes_seleccionado,
-                            anio=anio_seleccionado
-                        ).order_by('-no').first()
-                        nuevo.no = (ultimo.no + 1) if ultimo else 1
-
+                    ultimo = CursoExcel.objects.filter(
+                        mes=nuevo.mes,
+                        anio=nuevo.anio
+                    ).order_by('-no').first()
+                    nuevo.no = (ultimo.no + 1) if ultimo else 1
                     nuevo.save()
-                    messages.success(request, f"Curso «{nombre_curso}» registrado correctamente.")
+                    messages.success(
+                        request,
+                        f"Curso «{nombre_curso}» ({fecha_curso or 'sin fecha'}) registrado."
+                    )
 
+            # Redirigir al mes de la fecha capturada
+            if fecha_curso:
+                return redirect(
+                    f"{request.path}?mes={str(fecha_curso.month).zfill(2)}&anio={fecha_curso.year}"
+                )
             return redirect(f"{request.path}?mes={mes_seleccionado}&anio={anio_seleccionado}")
+        messages.error(request, "Revisa los campos del formulario.")
     else:
         form = CursoExcelForm(instance=instance)
 
     registros = CursoExcel.objects.filter(
         mes=mes_seleccionado,
         anio=anio_seleccionado
-    ).order_by('no')
+    ).order_by('fecha', 'no')
 
     totales = registros.aggregate(
         total_cantidad=Sum('cantidad'),
         total_constancia=Sum('constancia'),
         total_operativo=Sum('operativo'),
         total_promotores=Sum('promotores'),
-        total_administrative=Sum('administrativo'),
+        total_administrativo=Sum('administrativo'),
         total_confianza=Sum('confianza'),
         total_hombres=Sum('hombres'),
         total_mujeres=Sum('mujeres'),
@@ -647,7 +672,7 @@ def cursos_nuevos(request):
     total_general = (
         (totales['total_operativo'] or 0) +
         (totales['total_promotores'] or 0) +
-        (totales['total_administrative'] or 0) +
+        (totales['total_administrativo'] or 0) +
         (totales['total_confianza'] or 0)
     )
 
@@ -659,47 +684,11 @@ def cursos_nuevos(request):
         'mes_seleccionado': mes_seleccionado,
         'nombre_mes': nombre_mes,
         'meses_dict': meses_dict,
-        'editando': bool(instance),
+        'editando': instance is not None,
+        'registro_editando': instance,
         'anio_seleccionado': anio_seleccionado,
         'anio_actual': anio_actual,
     })
-@login_required
-@transaction.atomic
-def capacitaciones(request):
-    instance_id = request.GET.get('editar_id')
-    instance = get_object_or_404(Capacitacion, id=instance_id) if instance_id else None
-
-    if request.method == 'POST':
-        form = CapacitacionForm(request.POST, instance=instance)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Registro de capacitación guardado correctamente.")
-            return redirect('capacitaciones')
-    else:
-        form = CapacitacionForm(instance=instance)
-
-    registros = Capacitacion.objects.all().order_by('consecutivo')
-
-    totales = registros.aggregate(
-        total_operativos=Sum('participantes_operativos'),
-        total_hombres=Sum('hombres'),
-        total_mujeres=Sum('mujeres'),
-        total_fortalecimiento=Sum('fortalecimiento_desempenio'),
-    )
-
-    total_participantes = (
-        (totales['total_hombres'] or 0) +
-        (totales['total_mujeres'] or 0)
-    )
-
-    return render(request, 'capacitaciones.html', {
-        'form': form,
-        'registros': registros,
-        'totales': totales,
-        'total_participantes': total_participantes,
-        'editando': bool(instance),
-    })
-
 @login_required
 @transaction.atomic
 def gestion_capacitaciones(request):
@@ -1192,3 +1181,171 @@ def descargar_dc3_relleno(request, empleado_id):
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
     return response
+import pandas as pd
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import Sum
+from django.shortcuts import render, redirect
+from .forms import CapacitacionForm
+from .models import Capacitacion
+
+
+def _num_cap(val):
+    if val is None:
+        return 0
+    try:
+        if isinstance(val, float) and pd.isna(val):
+            return 0
+    except Exception:
+        pass
+    t = str(val).strip().replace(',', '')
+    if t == '' or t.upper() in ('NAN', 'NONE', '-'):
+        return 0
+    try:
+        return int(float(t))
+    except (ValueError, TypeError):
+        return 0
+
+
+def _txt_cap(val):
+    if val is None:
+        return ''
+    try:
+        if isinstance(val, float) and pd.isna(val):
+            return ''
+    except Exception:
+        pass
+    return str(val).strip().replace('\n', ' ')
+
+
+@login_required
+@transaction.atomic
+def capacitaciones(request):
+    instance_id = request.POST.get('editar_id') or request.GET.get('editar_id')
+    instance = None
+    if instance_id:
+        try:
+            instance = Capacitacion.objects.get(pk=int(instance_id))
+        except (Capacitacion.DoesNotExist, ValueError, TypeError):
+            instance = None
+
+    if request.method == 'POST':
+        form = CapacitacionForm(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Registro actualizado correctamente.' if instance else 'Registro guardado correctamente.'
+            )
+            return redirect('capacitaciones')
+        messages.error(request, 'Revisa los campos del formulario.')
+    else:
+        form = CapacitacionForm(instance=instance)
+
+    registros = Capacitacion.objects.all().order_by('consecutivo')
+    totales = registros.aggregate(
+        total_operativos=Sum('participantes_operativos'),
+        total_enlace=Sum('participantes_enlace'),
+        total_mandos_medios=Sum('participantes_mandos_medios'),
+        total_mandos_superiores=Sum('participantes_mandos_superiores'),
+        total_categorias=Sum('participantes_categorias_especiales'),
+        total_induccion=Sum('induccion'),
+        total_fortalecimiento=Sum('fortalecimiento_desempenio'),
+        total_actualizacion=Sum('actualizacion'),
+        total_desarrollo=Sum('desarrollo'),
+        total_certificacion=Sum('certificacion'),
+        total_sensibilizacion=Sum('sensibilizacion'),
+        total_hombres=Sum('hombres'),
+        total_mujeres=Sum('mujeres'),
+    )
+    total_participantes = (totales['total_hombres'] or 0) + (totales['total_mujeres'] or 0)
+
+    return render(request, 'capacitaciones.html', {
+        'form': form,
+        'registros': registros,
+        'totales': totales,
+        'total_participantes': total_participantes,
+        'editando': instance is not None,
+        'registro_editando': instance,
+    })
+
+
+@login_required
+@transaction.atomic
+def cargar_capacitaciones(request):
+    if request.method == 'POST' and request.FILES.get('archivo_excel'):
+        archivo = request.FILES['archivo_excel']
+        if not archivo.name.lower().endswith(('.xlsx', '.xls', '.xlsm')):
+            messages.error(request, 'Sube un archivo Excel (.xlsx / .xls / .xlsm).')
+            return redirect('cargar_capacitaciones')
+
+        try:
+            # Preferir la hoja del ejemplo 1159
+            xl = pd.ExcelFile(archivo)
+            hoja = None
+            for nombre in xl.sheet_names:
+                if 'ejemplo' in nombre.lower() or '1159' in nombre.lower():
+                    hoja = nombre
+                    break
+            if hoja is None:
+                hoja = xl.sheet_names[0]
+
+            df = pd.read_excel(archivo, sheet_name=hoja, header=None)
+
+            # Buscar fila con "consecutivo" + "nombre"
+            fila_inicio_datos = None
+            for i, row in df.iterrows():
+                c0 = _txt_cap(row.iloc[0]).lower() if len(row) > 0 else ''
+                c1 = _txt_cap(row.iloc[1]).lower() if len(row) > 1 else ''
+                if 'consecutivo' in c0 and 'nombre' in c1:
+                    # Los datos empiezan 2 filas después (hay subencabezado)
+                    fila_inicio_datos = i + 2
+                    break
+
+            # Si no encontró encabezado, usar fila 18 (como en tu archivo)
+            if fila_inicio_datos is None:
+                fila_inicio_datos = 18
+
+            if request.POST.get('borrar_antes') == 'on':
+                Capacitacion.objects.all().delete()
+
+            creados = 0
+            for i in range(fila_inicio_datos, len(df)):
+                row = df.iloc[i]
+                nombre = _txt_cap(row.iloc[1]) if len(row) > 1 else ''
+                if not nombre:
+                    continue
+                if nombre.lower() in ('nan', 'total', 'totales'):
+                    continue
+
+                Capacitacion.objects.create(
+                    consecutivo=_num_cap(row.iloc[0]) if len(row) > 0 else (creados + 1),
+                    nombre_tipo_capacitacion=nombre[:255],
+                    tipo_capacitacion=_txt_cap(row.iloc[2])[:100] if len(row) > 2 else '',
+                    modalidad=_txt_cap(row.iloc[3])[:100] if len(row) > 3 else '',
+                    numero_acciones=_num_cap(row.iloc[4]) if len(row) > 4 else 0,
+                    participantes_operativos=_num_cap(row.iloc[5]) if len(row) > 5 else 0,
+                    participantes_enlace=_num_cap(row.iloc[6]) if len(row) > 6 else 0,
+                    participantes_mandos_medios=_num_cap(row.iloc[7]) if len(row) > 7 else 0,
+                    participantes_mandos_superiores=_num_cap(row.iloc[8]) if len(row) > 8 else 0,
+                    participantes_categorias_especiales=_num_cap(row.iloc[9]) if len(row) > 9 else 0,
+                    induccion=_num_cap(row.iloc[11]) if len(row) > 11 else 0,
+                    fortalecimiento_desempenio=_num_cap(row.iloc[12]) if len(row) > 12 else 0,
+                    actualizacion=_num_cap(row.iloc[13]) if len(row) > 13 else 0,
+                    desarrollo=_num_cap(row.iloc[14]) if len(row) > 14 else 0,
+                    certificacion=_num_cap(row.iloc[15]) if len(row) > 15 else 0,
+                    sensibilizacion=_num_cap(row.iloc[16]) if len(row) > 16 else 0,
+                    hombres=_num_cap(row.iloc[23]) if len(row) > 23 else 0,
+                    mujeres=_num_cap(row.iloc[24]) if len(row) > 24 else 0,
+                )
+                creados += 1
+
+            messages.success(request, f'Se cargaron {creados} capacitaciones del Formato 1159.')
+            return redirect('capacitaciones')
+
+        except Exception as e:
+            messages.error(request, f'Error al procesar el Excel: {e}')
+            return redirect('cargar_capacitaciones')
+
+    return render(request, 'cargar_capacitaciones.html')

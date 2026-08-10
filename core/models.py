@@ -49,10 +49,11 @@ class Curso(models.Model):
 from django.db import models
 from django.utils import timezone
 
-
 class CursoExcel(models.Model):
     no = models.IntegerField(verbose_name="Número", default=1)
     nombre = models.CharField(max_length=255, verbose_name="Nombre del Curso")
+    fecha = models.DateField(null=True, blank=True, verbose_name="Fecha del curso")  # ← NUEVO
+
     cantidad = models.IntegerField(default=0, verbose_name="Cantidad")
     constancia = models.IntegerField(default=0, verbose_name="Constancias")
 
@@ -71,10 +72,11 @@ class CursoExcel(models.Model):
     class Meta:
         verbose_name = "Curso Excel"
         verbose_name_plural = "Cursos Excel"
-        unique_together = [('nombre', 'mes', 'anio')]
+        # Ya NO unique por nombre+mes+anio (puedes tener varias fechas del mismo curso)
+        ordering = ['fecha', 'no']
 
     def __str__(self):
-        return f"{self.no} - {self.nombre} ({self.mes}/{self.anio})"
+        return f"{self.no} - {self.nombre} ({self.fecha})"
 
     @property
     def total_participantes(self):
@@ -83,7 +85,7 @@ class CursoExcel(models.Model):
             (self.promotores or 0) +
             (self.administrativo or 0) +
             (self.confianza or 0)
-        )    
+        )
 # =========================
 # PLAN DE CAPTURA
 # =========================# =========================
@@ -162,36 +164,31 @@ class ProgramaReal(models.Model):
     def __str__(self):
         return f"{self.no} - {self.nombre}"
 
+from django.db import models
+from django.db import models
 
 class Capacitacion(models.Model):
-    consecutivo = models.IntegerField(
-        verbose_name="Consecutivo"
-    )
-    nombre_tipo_capacitacion = models.CharField(
-        max_length=255, 
-        verbose_name="Nombre Tipo Capacitación"
-    )
-    participantes_operativos = models.PositiveIntegerField(
-        default=0, 
-        verbose_name="Participantes Operativos"
-    )
-    hombres = models.PositiveIntegerField(
-        default=0, 
-        verbose_name="Hombres"
-    )
-    mujeres = models.PositiveIntegerField(
-        default=0, 
-        verbose_name="Mujeres"
-    )
-    fortalecimiento_desempenio = models.PositiveIntegerField(
-        default=0, 
-        verbose_name="Fortalecimiento del Desempeño"
-    )
+    consecutivo = models.IntegerField(default=1, verbose_name="Consecutivo")
+    nombre_tipo_capacitacion = models.CharField(max_length=255, verbose_name="Nombre Tipo Capacitación")
+    tipo_capacitacion = models.CharField(max_length=100, blank=True, default="", verbose_name="Tipo Capacitación")
+    modalidad = models.CharField(max_length=100, blank=True, default="", verbose_name="Modalidad")
+    numero_acciones = models.PositiveIntegerField(default=0, verbose_name="Número de Acciones")
 
-    @property
-    def total_participantes(self):
-        """Calcula dinámicamente el total sumando hombres y mujeres"""
-        return self.hombres + self.mujeres
+    participantes_operativos = models.PositiveIntegerField(default=0, verbose_name="Participantes Operativos")
+    participantes_enlace = models.PositiveIntegerField(default=0, verbose_name="Participantes Enlace")
+    participantes_mandos_medios = models.PositiveIntegerField(default=0, verbose_name="Mandos Medios")
+    participantes_mandos_superiores = models.PositiveIntegerField(default=0, verbose_name="Mandos Superiores")
+    participantes_categorias_especiales = models.PositiveIntegerField(default=0, verbose_name="Categorías Especiales")
+
+    induccion = models.PositiveIntegerField(default=0, verbose_name="Inducción")
+    fortalecimiento_desempenio = models.PositiveIntegerField(default=0, verbose_name="Fortalecimiento del Desempeño")
+    actualizacion = models.PositiveIntegerField(default=0, verbose_name="Actualización")
+    desarrollo = models.PositiveIntegerField(default=0, verbose_name="Desarrollo")
+    certificacion = models.PositiveIntegerField(default=0, verbose_name="Certificación")
+    sensibilizacion = models.PositiveIntegerField(default=0, verbose_name="Sensibilización")
+
+    hombres = models.PositiveIntegerField(default=0, verbose_name="Hombres")
+    mujeres = models.PositiveIntegerField(default=0, verbose_name="Mujeres")
 
     class Meta:
         verbose_name = "Capacitación"
@@ -200,7 +197,20 @@ class Capacitacion(models.Model):
 
     def __str__(self):
         return f"{self.consecutivo} - {self.nombre_tipo_capacitacion}"
-    
+
+    @property
+    def total_participantes(self):
+        return (self.hombres or 0) + (self.mujeres or 0)
+
+    @property
+    def total_por_tipo(self):
+        return (
+            (self.participantes_operativos or 0) +
+            (self.participantes_enlace or 0) +
+            (self.participantes_mandos_medios or 0) +
+            (self.participantes_mandos_superiores or 0) +
+            (self.participantes_categorias_especiales or 0)
+        )
     from django.db import models
 
 # ... Tus otros modelos existentes (como CargaSTPS y PlanCaptura) ...

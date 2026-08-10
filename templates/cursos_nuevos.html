@@ -1,199 +1,317 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div class="container my-4">
-    <h3 class="mb-2">Control Dinámico de Cursos Nuevos</h3>
-    <p class="text-muted">
-        Si el curso ya existe en el mes, se suman hombres, mujeres y participantes automáticamente.
-    </p>
+<style>
+    .cn-header {
+        background: linear-gradient(135deg, #003087 0%, #0052cc 100%);
+        border-radius: 16px;
+        padding: 1.35rem 1.5rem;
+        color: #fff;
+        margin-bottom: 1.25rem;
+    }
+    .cn-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(15,23,42,.04);
+    }
+    .cn-stat {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: .9rem 1rem;
+        height: 100%;
+    }
+    .cn-stat .label {
+        font-size: .72rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: #64748b;
+        font-weight: 700;
+    }
+    .cn-stat .value {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.15;
+    }
+    .mes-btn {
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: .8rem;
+    }
+    .tabla-cursos {
+        font-size: .82rem;
+        margin: 0;
+    }
+    .tabla-cursos thead th {
+        background: #003087 !important;
+        color: #fff !important;
+        font-size: .72rem;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        border: none;
+        white-space: nowrap;
+        padding: .7rem .45rem;
+    }
+    .tabla-cursos tbody td {
+        vertical-align: middle;
+        border-color: #f1f5f9;
+        padding: .55rem .45rem;
+    }
+    .tabla-cursos tbody tr:hover { background: #f8fafc; }
+    .fila-totales {
+        background: #ecfdf5 !important;
+        font-weight: 700;
+    }
+    .edit-banner {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        border-radius: 12px;
+        padding: .7rem 1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    .fecha-badge {
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-weight: 700;
+        font-size: .8rem;
+        padding: .25rem .55rem;
+        border-radius: 8px;
+        display: inline-block;
+    }
+</style>
 
-    <!-- Meses -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card p-2 bg-white shadow-sm">
-                <div class="d-flex flex-wrap gap-2 justify-content-center">
-                    {% for key, val in meses_dict.items %}
-                        <a href="?mes={{ key }}&anio={{ anio_seleccionado }}"
-                           class="btn btn-sm {% if mes_seleccionado == key %}btn-primary{% else %}btn-outline-secondary{% endif %}">
-                            {{ val }}
-                        </a>
-                    {% endfor %}
-                </div>
+<div class="container my-4">
+
+    <!-- Header -->
+    <div class="cn-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <h4 class="mb-1 fw-bold">
+                <i class="bi bi-journal-plus me-2"></i>Control de Cursos Nuevos
+            </h4>
+            <p class="mb-0 opacity-75 small">
+                {{ nombre_mes }} {{ anio_seleccionado }} · Cada fecha del curso se guarda como fila aparte
+            </p>
+        </div>
+    </div>
+
+    <!-- Selector de meses -->
+    <div class="cn-card p-3 mb-3">
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+            {% for key, val in meses_dict.items %}
+            <a href="?mes={{ key }}&anio={{ anio_seleccionado }}"
+               class="btn btn-sm mes-btn {% if mes_seleccionado == key %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                {{ val }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Contadores -->
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3">
+            <div class="cn-stat">
+                <div class="label">Registros</div>
+                <div class="value">{{ registros|length }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="cn-stat">
+                <div class="label">Total participantes</div>
+                <div class="value">{{ total_general|default:0 }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="cn-stat">
+                <div class="label">Hombres</div>
+                <div class="value text-primary">{{ totales.total_hombres|default:0 }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="cn-stat">
+                <div class="label">Mujeres</div>
+                <div class="value text-danger">{{ totales.total_mujeres|default:0 }}</div>
             </div>
         </div>
     </div>
 
     <!-- Formulario -->
-    <div class="card mb-4 p-3 {% if editando %}border-warning{% else %}bg-light{% endif %} shadow-sm">
-        <h5 class="card-title text-uppercase fw-bold">
+    <div class="cn-card p-4 mb-3">
+        {% if editando %}
+        <div class="edit-banner">
+            <i class="bi bi-pencil-square me-1"></i>
+            Editando: {{ registro_editando.nombre }}
+            {% if registro_editando.fecha %}
+                — {{ registro_editando.fecha|date:"d/m/Y" }}
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <h5 class="fw-bold mb-3">
             {% if editando %}
-                ✏️ Editando Curso
+                ✏️ Editar curso
             {% else %}
-                ➕ Añadir / Actualizar en {{ nombre_mes }} {{ anio_seleccionado }}
+                ➕ Añadir curso con fecha en {{ nombre_mes }}
             {% endif %}
         </h5>
-        <form method="post">
+
+        <form method="post"
+              action="?mes={{ mes_seleccionado }}&anio={{ anio_seleccionado }}{% if editando %}&editar_id={{ registro_editando.id }}{% endif %}">
             {% csrf_token %}
+            {% if editando %}
+                <input type="hidden" name="editar_id" value="{{ registro_editando.id }}">
+            {% endif %}
+
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li><strong>{{ field }}</strong>: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
             <div class="row g-3">
                 {% for field in form %}
                 <div class="col-md-4 col-lg-3">
-                    <label class="form-label fw-semibold small">{{ field.label }}</label>
+                    <label class="form-label fw-semibold small text-secondary">{{ field.label }}</label>
                     {{ field }}
-                    {% if field.errors %}
-                        <div class="text-danger small">{{ field.errors }}</div>
-                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
+
             <div class="mt-3 d-flex gap-2">
-                <button type="submit" class="btn {% if editando %}btn-warning{% else %}btn-primary{% endif %}">
-                    {% if editando %}Actualizar{% else %}Guardar / Sumar{% endif %}
+                <button type="submit" class="btn {% if editando %}btn-warning text-dark{% else %}btn-primary{% endif %} fw-semibold">
+                    {% if editando %}Actualizar{% else %}Guardar{% endif %}
                 </button>
                 {% if editando %}
-                    <a href="?mes={{ mes_seleccionado }}&anio={{ anio_seleccionado }}" class="btn btn-secondary">
-                        Cancelar
-                    </a>
+                <a href="?mes={{ mes_seleccionado }}&anio={{ anio_seleccionado }}" class="btn btn-outline-secondary">
+                    Cancelar
+                </a>
                 {% endif %}
             </div>
         </form>
     </div>
 
     <!-- Filtro -->
-    <div class="card mb-3 p-3 shadow-sm border-0">
-        <div class="row align-items-center g-2">
-            <div class="col-md-6">
-                <label class="form-label fw-semibold mb-1">Filtrar cursos</label>
+    <div class="cn-card p-3 mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-7">
+                <label class="form-label fw-semibold small mb-1">Filtrar cursos</label>
                 <div class="input-group">
                     <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
                     <input type="text" id="filtroCurso" class="form-control" placeholder="Nombre del curso...">
                 </div>
             </div>
             <div class="col-md-3">
-                <label class="form-label fw-semibold mb-1">Resultados</label>
-                <div><span id="contadorResultados" class="badge bg-primary">—</span> cursos</div>
+                <div class="small text-muted">Resultados:
+                    <span id="contadorResultados" class="badge bg-primary">—</span>
+                </div>
             </div>
-            <div class="col-md-3 text-md-end">
-                <button type="button" id="btnLimpiarFiltro" class="btn btn-outline-secondary btn-sm mt-4">
-                    Limpiar filtro
+            <div class="col-md-2 text-md-end">
+                <button type="button" id="btnLimpiarFiltro" class="btn btn-outline-secondary btn-sm">
+                    Limpiar
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Contadores -->
-    <div class="row g-3 mb-3">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="text-muted small">Total participantes</div>
-                    <div class="fs-4 fw-bold">{{ total_general|default:0 }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="text-muted small">Total hombres</div>
-                    <div class="fs-4 fw-bold text-info">{{ totales.total_hombres|default:0 }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="text-muted small">Total mujeres</div>
-                    <div class="fs-4 fw-bold text-danger">{{ totales.total_mujeres|default:0 }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Tabla -->
-    <div class="table-responsive shadow-sm">
-        <table class="table table-bordered text-center align-middle" style="font-size: 12px; border: 2px solid #000;">
-            <thead>
-                <tr style="background-color: #00b0f0; color: white;">
-                    <th colspan="8" class="fs-5 py-1" style="border: 1px solid #000;">
-                        {{ nombre_mes }} {{ anio_seleccionado }}
-                    </th>
-                    <th colspan="4" style="background-color: #b4c6e7; color: #0000ff; border: 1px solid #000;">
-                        Género / Acción
-                    </th>
-                </tr>
-                <tr style="background-color: #f2f2f2; font-weight: bold;">
-                    <th style="border: 1px solid #000;">Nombre del Curso</th>
-                    <th style="border: 1px solid #000;">Cantidad</th>
-                    <th style="border: 1px solid #000;">Constancias</th>
-                    <th style="border: 1px solid #000;">Operativo</th>
-                    <th style="border: 1px solid #000;">Promotores</th>
-                    <th style="border: 1px solid #000;">Administrativo</th>
-                    <th style="border: 1px solid #000;">Confianza</th>
-                    <th style="border: 1px solid #000;">Total Part.</th>
-                    <th style="border: 1px solid #000;">Hombres</th>
-                    <th style="border: 1px solid #000;">Mujeres</th>
-                    <th style="border: 1px solid #000;">Total H+M</th>
-                    <th style="border: 1px solid #000;">Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for reg in registros %}
-                <tr class="fila-curso" data-nombre="{{ reg.nombre|lower }}">
-                    <td class="text-start fw-bold" style="border: 1px solid #000;">
-                        {{ reg.nombre }}
-                        <div class="small text-muted">{{ reg.fecha_registro }}</div>
-                        <div class="mt-1">
-                            <span class="badge text-bg-info">H: {{ reg.hombres }}</span>
-                            <span class="badge text-bg-danger">M: {{ reg.mujeres }}</span>
-                        </div>
-                    </td>
-                    <td style="border: 1px solid #000;">{{ reg.cantidad }}</td>
-                    <td style="border: 1px solid #000;">{{ reg.constancia }}</td>
-                    <td style="border: 1px solid #000;">{{ reg.operativo }}</td>
-                    <td style="border: 1px solid #000;">{{ reg.promotores }}</td>
-                    <td style="border: 1px solid #000;">{{ reg.administrativo }}</td>
-                    <td style="border: 1px solid #000;">{{ reg.confianza }}</td>
-                    <td style="border: 1px solid #000; font-weight: bold;">{{ reg.total_participantes }}</td>
-                    <td style="border: 1px solid #000; color: #0d6efd; font-weight: bold;">{{ reg.hombres }}</td>
-                    <td style="border: 1px solid #000; color: #dc3545; font-weight: bold;">{{ reg.mujeres }}</td>
-                    <td style="border: 1px solid #000; font-weight: bold;">
-                        {{ reg.hombres|add:reg.mujeres }}
-                    </td>
-                    <td style="border: 1px solid #000;">
-                        <a href="?mes={{ mes_seleccionado }}&anio={{ anio_seleccionado }}&editar_id={{ reg.id }}"
-                           class="btn btn-sm btn-warning">✏️</a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="12" class="text-center p-4 text-muted">
-                        Sin cursos en {{ nombre_mes }} {{ anio_seleccionado }}.
-                    </td>
-                </tr>
-                {% endfor %}
-
-                <tr class="fw-bold">
-                    <td class="text-start" style="border: 1px solid #000;">TOTALES</td>
-                    <td style="border: 1px solid #000;">{{ totales.total_cantidad|default:0 }}</td>
-                    <td style="border: 1px solid #000;">{{ totales.total_constancia|default:0 }}</td>
-                    <td style="border: 1px solid #000;">{{ totales.total_operativo|default:0 }}</td>
-                    <td style="border: 1px solid #000;">{{ totales.total_promotores|default:0 }}</td>
-                    <td style="border: 1px solid #000;">{{ totales.total_administrativo|default:0 }}</td>
-                    <td style="border: 1px solid #000;">{{ totales.total_confianza|default:0 }}</td>
-                    <td style="border: 1px solid #000;">{{ total_general|default:0 }}</td>
-                    <td style="border: 1px solid #000;">{{ totales.total_hombres|default:0 }}</td>
-                    <td style="border: 1px solid #000;">{{ totales.total_mujeres|default:0 }}</td>
-                    <td style="border: 1px solid #000;">
-                        {{ totales.total_hombres|default:0|add:totales.total_mujeres|default:0 }}
-                    </td>
-                    <td style="border: 1px solid #000;"></td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="cn-card p-3">
+        <div class="table-responsive">
+            <table class="table tabla-cursos align-middle text-center">
+                <thead>
+                    <tr>
+                        <th class="text-start">Nombre del Curso</th>
+                        <th>Fecha</th>
+                        <th>Cantidad</th>
+                        <th>Constancias</th>
+                        <th>Operativo</th>
+                        <th>Promotores</th>
+                        <th>Admin.</th>
+                        <th>Confianza</th>
+                        <th>Total</th>
+                        <th>Hombres</th>
+                        <th>Mujeres</th>
+                        <th>H+M</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in registros %}
+                    <tr class="fila-curso" data-nombre="{{ reg.nombre|lower }}">
+                        <td class="text-start">
+                            <div class="fw-semibold">{{ reg.nombre }}</div>
+                            <div class="mt-1">
+                                <span class="badge text-bg-info">H: {{ reg.hombres }}</span>
+                                <span class="badge text-bg-danger">M: {{ reg.mujeres }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if reg.fecha %}
+                                <span class="fecha-badge">{{ reg.fecha|date:"d/m/Y" }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ reg.cantidad }}</td>
+                        <td>{{ reg.constancia }}</td>
+                        <td>{{ reg.operativo }}</td>
+                        <td>{{ reg.promotores }}</td>
+                        <td>{{ reg.administrativo }}</td>
+                        <td>{{ reg.confianza }}</td>
+                        <td class="fw-bold">{{ reg.total_participantes }}</td>
+                        <td class="text-primary fw-bold">{{ reg.hombres }}</td>
+                        <td class="text-danger fw-bold">{{ reg.mujeres }}</td>
+                        <td class="fw-bold">{{ reg.hombres|add:reg.mujeres }}</td>
+                        <td>
+                            <a href="?mes={{ mes_seleccionado }}&anio={{ anio_seleccionado }}&editar_id={{ reg.id }}"
+                               class="btn btn-sm btn-warning py-0 px-2" title="Editar">✏️</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="13" class="text-center text-muted py-5">
+                            Sin cursos en {{ nombre_mes }} {{ anio_seleccionado }}.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="fila-totales">
+                        <td class="text-start" colspan="2">TOTALES</td>
+                        <td>{{ totales.total_cantidad|default:0 }}</td>
+                        <td>{{ totales.total_constancia|default:0 }}</td>
+                        <td>{{ totales.total_operativo|default:0 }}</td>
+                        <td>{{ totales.total_promotores|default:0 }}</td>
+                        <td>{{ totales.total_administrativo|default:0 }}</td>
+                        <td>{{ totales.total_confianza|default:0 }}</td>
+                        <td>{{ total_general|default:0 }}</td>
+                        <td>{{ totales.total_hombres|default:0 }}</td>
+                        <td>{{ totales.total_mujeres|default:0 }}</td>
+                        <td>
+                            {{ totales.total_hombres|default:0|add:totales.total_mujeres|default:0 }}
+                        </td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('form input, form select, form textarea').forEach(function (el) {
+        if (el.type === 'hidden') return;
+        if (el.tagName === 'SELECT') el.classList.add('form-select');
+        else if (!el.classList.contains('form-control')) el.classList.add('form-control');
+    });
+
     const input = document.getElementById('filtroCurso');
     const btnLimpiar = document.getElementById('btnLimpiarFiltro');
     const contador = document.getElementById('contadorResultados');

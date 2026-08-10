@@ -1,173 +1,250 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Iniciar Sesión · Sistema de Capacitación{% endblock %}
 
 {% block content %}
 <style>
-    body {
-        background-color: #f8fafc;
-    }
-
-    .login-wrapper {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
+    .login-wrap {
+        max-width: 440px;
+        margin: 1.5rem auto 0;
     }
 
     .login-card {
-        width: 100%;
-        max-width: 400px;
-        background: #ffffff;
-        border-radius: 16px;
-        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.09);
+        background: #fff;
         border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(15, 23, 42, .08);
         overflow: hidden;
     }
 
     .login-header {
-        background-color: #1e2937;
-        padding: 38px 32px 32px;
+        background: linear-gradient(135deg, #003087 0%, #001f5c 100%);
+        color: #fff;
+        padding: 2rem 1.75rem 1.5rem;
         text-align: center;
+        position: relative;
     }
 
-    .login-header .brand {
+    .login-header::after {
+        content: "";
+        position: absolute;
+        width: 160px;
+        height: 160px;
+        right: -50px;
+        top: -50px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.06);
+    }
+
+    .login-logo {
+        width: 64px;
+        height: 64px;
+        object-fit: contain;
+        background: #fff;
+        border-radius: 16px;
+        padding: 6px;
+        margin: 0 auto 1rem;
+        display: block;
+        box-shadow: 0 8px 20px rgba(0,0,0,.15);
+        position: relative;
+        z-index: 1;
+    }
+
+    .login-icon-fallback {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 1rem;
+        border-radius: 16px;
+        background: rgba(255,255,255,.15);
+        border: 1px solid rgba(255,255,255,.25);
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 12px;
-        color: white;
-        margin-bottom: 8px;
+        font-size: 1.75rem;
+        position: relative;
+        z-index: 1;
     }
 
-    .login-header .brand-icon {
-        font-size: 1.85rem;
-        color: #60a5fa;
-    }
-
-    .login-header h4 {
-        color: white;
-        font-weight: 700;
+    .login-header h1 {
         margin: 0;
-        letter-spacing: -0.02em;
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: -.03em;
+        position: relative;
+        z-index: 1;
     }
 
     .login-header p {
-        color: #94a3b8;
-        font-size: 0.95rem;
-        margin: 6px 0 0;
+        margin: .4rem 0 0;
+        font-size: .85rem;
+        color: rgba(255,255,255,.75);
+        position: relative;
+        z-index: 1;
     }
 
     .login-body {
-        padding: 40px 36px 44px;
+        padding: 1.75rem 1.75rem 1.5rem;
     }
 
-    .form-label {
+    .login-body label {
+        font-size: .8rem;
         font-weight: 600;
-        color: #334155;
-        margin-bottom: 6px;
-        font-size: 0.9rem;
+        color: #475569;
+        margin-bottom: .35rem;
     }
 
-    .form-control {
-        border: 1.5px solid #cbd5e1;
-        border-radius: 8px;
-        padding: 12px 16px;
+    .login-body .form-control {
+        border-radius: 11px;
+        border: 1px solid #e2e8f0;
+        padding: .7rem .95rem;
+        font-size: .92rem;
+        transition: border-color .2s, box-shadow .2s;
+    }
+
+    .login-body .form-control:focus {
+        border-color: #003087;
+        box-shadow: 0 0 0 .2rem rgba(0, 48, 135, .15);
+    }
+
+    .input-icon-wrap {
+        position: relative;
+    }
+
+    .input-icon-wrap .form-control {
+        padding-left: 2.6rem;
+    }
+
+    .input-icon-wrap i {
+        position: absolute;
+        left: .95rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
         font-size: 1rem;
-        transition: all 0.25s ease;
+        pointer-events: none;
     }
 
-    .form-control:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px hsl(240, 4%, 89%);
-        outline: none;
-    }
-
-    .btn-login {
-        background-color: hsl(226, 47%, 69%);
-        color: white;
-        font-weight: 600;
-        padding: 13px;
-        font-size: 1.02rem;
-        border-radius: 8px;
-        border: none;
+    .btn-login-submit {
         width: 100%;
-        margin-top: 8px;
-        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #003087, #001f5c);
+        color: #fff;
+        font-weight: 700;
+        border: none;
+        border-radius: 12px;
+        padding: .75rem 1rem;
+        font-size: .95rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        transition: transform .2s, box-shadow .2s;
+        box-shadow: 0 6px 18px rgba(0, 48, 135, .25);
     }
 
-    .btn-login:hover {
-        background-color: hsl(224, 66%, 69%);
-        transform: translateY(-1px);
+    .btn-login-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(0, 48, 135, .3);
+        color: #fff;
     }
 
-    .errorlist { display: none; }
+    .login-footer {
+        text-align: center;
+        padding: 0 1.75rem 1.5rem;
+        font-size: .78rem;
+        color: #94a3b8;
+    }
+
+    .login-alert {
+        border-radius: 11px;
+        font-size: .85rem;
+        border: none;
+    }
+
+    .login-alert.alert-danger {
+        background: #fef2f2;
+        color: #b91c1c;
+    }
 </style>
 
-<div class="login-wrapper">
+<div class="login-wrap">
     <div class="login-card">
-        
+
         <!-- Header -->
         <div class="login-header">
-            <div class="brand">
-                <i class="bi bi-person-workspace brand-icon"></i>
-                <h4>Sistema de Capacitación</h4>
+            {# Si tienes logo, descomenta: #}
+            {# <img src="{% static 'img/logo.png' %}" alt="Logo" class="login-logo"> #}
+
+            <div class="login-icon-fallback">
+                <i class="bi bi-mortarboard-fill"></i>
             </div>
-            <p>Gestión capacitacion y adiestramineto y productividad </p>
+
+            <h1>Iniciar sesión</h1>
+            <p>Sistema de Gestión de Capacitación</p>
         </div>
 
-        <!-- Formulario -->
+        <!-- Body -->
         <div class="login-body">
-            <form method="post" autocomplete="off">
+            {% if form.errors %}
+            <div class="alert alert-danger login-alert mb-3">
+                <i class="bi bi-exclamation-circle me-1"></i>
+                Usuario o contraseña incorrectos. Intenta de nuevo.
+            </div>
+            {% endif %}
+
+            {% if next %}
+                {% if user.is_authenticated %}
+                <div class="alert alert-warning login-alert mb-3">
+                    Tu cuenta no tiene permiso para esta página.
+                </div>
+                {% endif %}
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}">
                 {% csrf_token %}
 
-                <div class="mb-4">
-                    {{ form.username.label_tag }}
-                    {{ form.username }}
-                </div>
-
-                <div class="mb-4">
-                    {{ form.password.label_tag }}
-                    {{ form.password }}
-                </div>
-
-                {% if form.errors or form.non_field_errors %}
-                    <div class="alert alert-danger py-3 mb-4 text-center">
-                        <small><i class="bi bi-exclamation-circle me-2"></i> Usuario o contraseña incorrectos</small>
+                <div class="mb-3">
+                    <label for="id_username">Usuario</label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-person-fill"></i>
+                        <input type="text"
+                               name="username"
+                               id="id_username"
+                               class="form-control"
+                               placeholder="Nombre de usuario"
+                               autocomplete="username"
+                               required
+                               autofocus
+                               value="{{ form.username.value|default:'' }}">
                     </div>
-                {% endif %}
+                </div>
 
-                <button type="submit" class="btn btn-login">
-                    Iniciar Sesión
+                <div class="mb-4">
+                    <label for="id_password">Contraseña</label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-lock-fill"></i>
+                        <input type="password"
+                               name="password"
+                               id="id_password"
+                               class="form-control"
+                               placeholder="••••••••"
+                               autocomplete="current-password"
+                               required>
+                    </div>
+                </div>
+
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <button type="submit" class="btn btn-login-submit">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Entrar al sistema
                 </button>
             </form>
+        </div>
 
-            <div class="text-center mt-4">
-                <small class="text-muted">
-                    Para soporte técnico contacte al administrador del sistema.
-                </small>
-            </div>
+        <div class="login-footer">
+            Acceso restringido · Personal autorizado
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Mejorar apariencia de los campos de Django
-        const inputs = document.querySelectorAll('.login-body input');
-        inputs.forEach(input => {
-            input.classList.add('form-control');
-        });
-
-        {% if form.errors or form.non_field_errors %}
-            Swal.fire({
-                icon: 'error',
-                title: 'Acceso Denegado',
-                text: 'Verifique sus credenciales e intente nuevamente.',
-                confirmButtonColor: '#1e40af',
-                confirmButtonText: 'Aceptar'
-            });
-        {% endif %}
-    });
-</script>
-
 {% endblock %}

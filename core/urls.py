@@ -6,8 +6,6 @@ urlpatterns = [
     path('plan/', views.plan_captura, name='plan_captura'),
     path('programa/', views.programa_real, name='programa_real'),
     path('cursos/', views.cursos_nuevos, name='cursos_nuevos'),
-    path('capacitaciones/', views.gestion_capacitaciones, name='gestion_capacitaciones'),
-    path('capacitaciones/', views.capacitaciones, name='capacitaciones'),
     path('reportes/', views.buscar_reporte, name='buscar_reporte'),
     path('reportes/pdf/', views.descargar_pdf, name='descargar_pdf'),
     path('cargar-excel/', views.cargar_excel, name='cargar_excel'),
@@ -32,7 +30,8 @@ path('cargar-areas/', views.cargar_areas_tematicas, name='cargar_areas_tematicas
    # path('cargar-ocupaciones/', views.cargar_ocupaciones, name='cargar_ocupaciones'),
 path('programa-real/', views.programa_real, name='programa_real'),
 path('cargar-programa-real/', views.cargar_programa_real, name='cargar_programa_real'),
-
+ path('capacitaciones/', views.capacitaciones, name='capacitaciones'),
+path('cargar-capacitaciones/', views.cargar_capacitaciones, name='cargar_capacitaciones'),
 ]
 
 

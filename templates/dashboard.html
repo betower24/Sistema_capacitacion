@@ -1,454 +1,652 @@
 {% extends 'base.html' %}
-
 {% block content %}
+
 <style>
-    :root {
-        --saap: #003087;
-        --saap-light: #0052cc;
-        --saap-dark: #002255;
-        --accent: #00a3e0;
-        --dark: #0f172a;
-        --gray-50: #f8fafc;
-        --gray-100: #f1f5f9;
-        --gray-200: #e2e8f0;
-        --gray-400: #94a3b8;
-        --gray-500: #64748b;
-        --gray-600: #475569;
-        --gray-700: #334155;
-    }
+:root {
+    --primary: #003087;
+    --primary-dark: #001a4d;
+    --primary-mid: #0052cc;
+    --accent: #00a3e0;
 
-    /* ========== HEADER ========== */
-    .dash-header {
-        background: linear-gradient(135deg, var(--saap) 0%, var(--saap-dark) 100%);
-        border-radius: 16px;
-        padding: 2rem 2.25rem;
-        margin-bottom: 2rem;
-        color: white;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1.25rem;
-        box-shadow: 0 4px 20px rgba(0, 48, 135, 0.25);
-    }
+    --dark: #0f172a;
+    --text: #334155;
+    --muted: #64748b;
 
-    .dash-title {
-        font-size: 1.65rem;
-        font-weight: 800;
-        letter-spacing: -0.03em;
-        margin: 0;
-        color: white;
-    }
+    --bg: #f1f5f9;
+    --white: #ffffff;
+    --border: #e2e8f0;
 
-    .dash-subtitle {
-        color: rgba(255, 255, 255, 0.8);
-        font-size: 0.95rem;
-        margin: 0.35rem 0 0 0;
-        font-weight: 500;
-    }
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, .06);
+    --shadow: 0 10px 28px rgba(15, 23, 42, .08);
+    --shadow-lg: 0 22px 50px rgba(15, 23, 42, .14);
 
-    /* Fecha */
-    .date-box {
-        background: rgba(255, 255, 255, 0.12);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 12px;
-        padding: 0.65rem 1.15rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        color: white;
-    }
+    --radius: 20px;
+    --radius-sm: 14px;
+}
 
-    .date-box i {
-        font-size: 1.35rem;
-        opacity: 0.9;
-    }
+.dash {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 4px 48px;
+}
 
-    .date-box .date-text {
-        line-height: 1.25;
-    }
+/* ========== HERO ========== */
+.dash-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    padding: 28px 32px;
+    margin-bottom: 22px;
+    color: #fff;
+    background:
+        radial-gradient(ellipse 60% 80% at 100% 0%, rgba(0,163,224,.35), transparent 55%),
+        radial-gradient(ellipse 40% 60% at 0% 100%, rgba(255,255,255,.08), transparent 50%),
+        linear-gradient(135deg, #003087 0%, #001f5c 55%, #00153f 100%);
+    box-shadow: 0 20px 50px rgba(0, 48, 135, .25);
+}
 
-    .date-box .date-day {
-        font-weight: 700;
-        font-size: 0.95rem;
-    }
+.dash-hero::before {
+    content: "";
+    position: absolute;
+    width: 320px;
+    height: 320px;
+    right: -120px;
+    top: -140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.05);
+    pointer-events: none;
+}
 
-    .date-box .date-full {
-        font-size: 0.8rem;
-        opacity: 0.8;
-    }
+.dash-hero::after {
+    content: "";
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    left: -60px;
+    bottom: -100px;
+    border-radius: 50%;
+    background: rgba(0,163,224,.12);
+    pointer-events: none;
+}
 
-    .admin-badge {
-        background: rgba(255, 255, 255, 0.15);
-        color: white;
-        font-weight: 600;
-        font-size: 0.85rem;
-        padding: 0.45rem 1rem;
-        border-radius: 999px;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        border: 1px solid rgba(255, 255, 255, 0.25);
-    }
+.hero-row {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
 
-    .btn-admin {
-        background: white;
-        color: var(--saap);
-        font-weight: 600;
-        border: none;
-        border-radius: 10px;
-        padding: 0.6rem 1.25rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s ease;
-        font-size: 0.9rem;
-    }
+.hero-brand {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
 
-    .btn-admin:hover {
-        background: #f1f5f9;
-        color: var(--saap-dark);
-        transform: translateY(-1px);
-    }
+.hero-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.2);
+    backdrop-filter: blur(8px);
+}
 
-    /* ========== SECTION TITLE ========== */
-    .section-title {
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--dark);
-        margin: 2.25rem 0 1.15rem 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        letter-spacing: -0.01em;
-    }
+.hero-title {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 800;
+    letter-spacing: -.04em;
+    line-height: 1.15;
+}
 
-    .section-title i {
-        color: var(--saap);
-        font-size: 1.1rem;
-    }
+.hero-sub {
+    margin: 6px 0 0;
+    font-size: .9rem;
+    color: rgba(255,255,255,.75);
+    font-weight: 500;
+}
 
-    /* ========== CARDS ========== */
-    .dash-card {
-        background: white;
-        border: 1px solid var(--gray-200);
-        border-radius: 14px;
-        padding: 1.4rem 1.35rem;
-        height: 100%;
-        transition: all 0.22s ease;
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-    }
+.hero-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
 
-    .dash-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        background: var(--saap);
-        opacity: 0;
-        transition: opacity 0.22s ease;
-    }
+.date-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(10px);
+}
 
-    .dash-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 24px -8px rgba(15, 23, 42, 0.12);
-        border-color: #cbd5e1;
-    }
+.date-pill i { font-size: 1.2rem; opacity: .9; }
+.date-day { font-weight: 700; font-size: .9rem; line-height: 1.2; }
+.date-full { font-size: .72rem; opacity: .7; margin-top: 1px; }
 
-    .dash-card:hover::before {
-        opacity: 1;
-    }
+.badge-admin {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border-radius: 12px;
+    font-size: .78rem;
+    font-weight: 700;
+    background: rgba(16, 185, 129, .2);
+    border: 1px solid rgba(16, 185, 129, .35);
+    color: #a7f3d0;
+}
 
-    .dash-card .icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 11px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-        margin-bottom: 1rem;
-        flex-shrink: 0;
-    }
+.btn-admin {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: .82rem;
+    transition: .2s ease;
+    box-shadow: 0 4px 14px rgba(0,0,0,.12);
+}
 
-    .dash-card h6 {
-        font-weight: 700;
-        font-size: 1rem;
-        color: var(--dark);
-        margin-bottom: 0.35rem;
-        letter-spacing: -0.01em;
-    }
+.btn-admin:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(0,0,0,.18);
+    color: var(--primary-dark);
+}
 
-    .dash-card p {
-        color: var(--gray-500);
-        font-size: 0.84rem;
-        margin-bottom: 1.15rem;
-        flex-grow: 1;
-        line-height: 1.45;
-    }
+/* ========== SECCIÓN ========== */
+.sec-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 28px 0 14px;
+}
 
-    .dash-card .btn-enter {
-        background: var(--gray-50);
-        color: var(--gray-700);
-        border: 1px solid var(--gray-200);
-        font-weight: 600;
-        font-size: 0.84rem;
-        border-radius: 9px;
-        padding: 0.6rem 0.9rem;
-        width: 100%;
-        transition: all 0.2s ease;
-        text-align: center;
-        text-decoration: none;
-    }
+.sec-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--dark);
+    letter-spacing: -.02em;
+}
 
-    .dash-card .btn-enter:hover {
-        background: var(--saap);
-        color: white;
-        border-color: var(--saap);
-    }
+.sec-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    color: var(--primary);
+    font-size: .95rem;
+}
 
-    .icon-blue    { background: #eff6ff; color: #2563eb; }
-    .icon-green   { background: #ecfdf5; color: #059669; }
-    .icon-amber   { background: #fffbeb; color: #d97706; }
-    .icon-purple  { background: #f5f3ff; color: #7c3aed; }
-    .icon-indigo  { background: #eef2ff; color: #4f46e5; }
-    .icon-cyan    { background: #ecfeff; color: #0891b2; }
-    .icon-emerald { background: #ecfdf5; color: #047857; }
-    .icon-rose    { background: #fff1f2; color: #e11d48; }
+.sec-desc {
+    margin: 4px 0 0 48px;
+    color: var(--muted);
+    font-size: .78rem;
+    font-weight: 500;
+}
 
-    /* ========== BANNER DC-3 ========== */
-    .banner-dc3 {
-        background: linear-gradient(135deg, var(--saap) 0%, var(--saap-dark) 100%);
-        border-radius: 14px;
-        padding: 1.5rem 2rem;
-        margin-top: 2.25rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1.25rem;
-        color: white;
-        box-shadow: 0 4px 20px rgba(0, 48, 135, 0.2);
-    }
+/* ========== GRID MÓDULOS ========== */
+.mod-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
 
-    .banner-dc3 h5 {
-        font-weight: 700;
-        margin: 0 0 0.25rem 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 1.1rem;
-    }
+.mod-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 220px;
+    padding: 22px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
 
-    .banner-dc3 p {
-        margin: 0;
-        opacity: 0.85;
-        font-size: 0.9rem;
-    }
+.mod-card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0;
+    width: 4px; height: 100%;
+    background: var(--c, var(--primary));
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform .28s ease;
+}
 
-    .btn-dc3 {
-        background: white;
-        color: var(--saap);
-        font-weight: 600;
-        border: none;
-        border-radius: 10px;
-        padding: 0.7rem 1.4rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s ease;
-        text-decoration: none;
-        font-size: 0.9rem;
-    }
+.mod-card::after {
+    content: "";
+    position: absolute;
+    right: -30px; top: -30px;
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: var(--c, var(--primary));
+    opacity: .04;
+    transition: opacity .25s ease;
+}
 
-    .btn-dc3:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        color: var(--saap-dark);
-    }
+.mod-card:hover {
+    transform: translateY(-7px);
+    border-color: #cbd5e1;
+    box-shadow: var(--shadow-lg);
+}
+
+.mod-card:hover::before { transform: scaleY(1); }
+.mod-card:hover::after { opacity: .08; }
+
+.mod-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    margin-bottom: 16px;
+    background: var(--c-bg, #eff6ff);
+    color: var(--c, #2563eb);
+    transition: transform .25s ease;
+}
+
+.mod-card:hover .mod-icon { transform: scale(1.06); }
+
+.mod-card h5 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--dark);
+    letter-spacing: -.02em;
+}
+
+.mod-card p {
+    margin: 0;
+    color: var(--muted);
+    font-size: .8rem;
+    line-height: 1.55;
+    flex: 1;
+}
+
+.mod-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 13px;
+    border-top: 1px solid #f1f5f9;
+    color: var(--c, var(--primary));
+    text-decoration: none;
+    font-size: .78rem;
+    font-weight: 800;
+    transition: .2s ease;
+}
+
+.mod-link i { transition: transform .2s ease; }
+.mod-link:hover { filter: brightness(.9); }
+.mod-link:hover i { transform: translateX(4px); }
+
+/* Colores de tarjeta */
+.c-blue   { --c: #2563eb; --c-bg: #eff6ff; }
+.c-green  { --c: #059669; --c-bg: #ecfdf5; }
+.c-orange { --c: #d97706; --c-bg: #fffbeb; }
+.c-purple { --c: #7c3aed; --c-bg: #f5f3ff; }
+.c-cyan   { --c: #0891b2; --c-bg: #ecfeff; }
+.c-indigo { --c: #4f46e5; --c-bg: #eef2ff; }
+.c-teal   { --c: #0d9488; --c-bg: #f0fdfa; }
+.c-rose   { --c: #e11d48; --c-bg: #fff1f2; }
+
+/* ========== BLOQUE ADMIN ========== */
+.admin-block {
+    padding: 22px;
+    border-radius: 22px;
+    background: linear-gradient(160deg, #f8fafc 0%, #eef4fb 100%);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+.admin-block .mod-grid { margin-top: 4px; }
+
+/* ========== BANNER DC-3 ========== */
+.dc3 {
+    position: relative;
+    overflow: hidden;
+    margin-top: 28px;
+    padding: 26px 30px;
+    border-radius: 20px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    background:
+        radial-gradient(circle at 90% 20%, rgba(0,163,224,.3), transparent 40%),
+        linear-gradient(135deg, #003087, #001a4d);
+    box-shadow: 0 16px 40px rgba(0, 48, 135, .22);
+}
+
+.dc3::after {
+    content: "";
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    right: -40px;
+    bottom: -70px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.05);
+}
+
+.dc3-left {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.dc3-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.45rem;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.18);
+}
+
+.dc3 h4 {
+    margin: 0 0 4px;
+    font-size: 1.08rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+}
+
+.dc3 p {
+    margin: 0;
+    font-size: .8rem;
+    color: rgba(255,255,255,.72);
+}
+
+.dc3-btn {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border-radius: 13px;
+    background: #fff;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: .82rem;
+    font-weight: 800;
+    box-shadow: 0 6px 18px rgba(0,0,0,.15);
+    transition: .2s ease;
+}
+
+.dc3-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0,0,0,.2);
+    color: var(--primary-dark);
+}
+
+/* ========== ANIMACIÓN ========== */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.dash > * {
+    animation: fadeUp .45s ease both;
+}
+.dash > *:nth-child(2) { animation-delay: .05s; }
+.dash > *:nth-child(3) { animation-delay: .1s; }
+.dash > *:nth-child(4) { animation-delay: .15s; }
+.dash > *:nth-child(5) { animation-delay: .2s; }
+.dash > *:nth-child(6) { animation-delay: .25s; }
+
+.mod-card {
+    animation: fadeUp .4s ease both;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1200px) {
+    .mod-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 900px) {
+    .mod-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero-title { font-size: 1.5rem; }
+}
+
+@media (max-width: 600px) {
+    .dash-hero { padding: 22px; border-radius: 18px; }
+    .hero-title { font-size: 1.3rem; }
+    .hero-tools { width: 100%; }
+    .date-pill, .btn-admin { width: 100%; justify-content: center; }
+    .mod-grid { grid-template-columns: 1fr; }
+    .admin-block { padding: 16px; }
+    .dc3 { padding: 20px; }
+    .dc3-btn { width: 100%; justify-content: center; }
+    .sec-desc { margin-left: 0; }
+}
 </style>
 
-<!-- ==================== HEADER ==================== -->
-<div class="dash-header">
-    <div>
-        <h1 class="dash-title">Panel de Control</h1>
-        <p class="dash-subtitle">Sistema de Gestión de Capacitación · Monitoreo y Administración</p>
-    </div>
+<div class="dash">
 
-    <div class="d-flex align-items-center gap-3 flex-wrap">
-        <!-- FECHA ACTUAL -->
-        <div class="date-box">
-            <i class="bi bi-calendar3"></i>
-            <div class="date-text">
-                <div class="date-day" id="fecha-dia">Cargando...</div>
-                <div class="date-full" id="fecha-completa"></div>
+    <!-- HERO -->
+    <section class="dash-hero">
+        <div class="hero-row">
+            <div class="hero-brand">
+                <div class="hero-icon">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                </div>
+                <div>
+                    <h1 class="hero-title">Panel de Control</h1>
+                    <p class="hero-sub">Sistema de Gestión de Capacitación · Administración y seguimiento</p>
+                </div>
+            </div>
+
+            <div class="hero-tools">
+                <div class="date-pill">
+                    <i class="bi bi-calendar3"></i>
+                    <div>
+                        <div class="date-day" id="fecha-dia">—</div>
+                        <div class="date-full" id="fecha-completa"></div>
+                    </div>
+                </div>
+
+                {% if user.is_staff %}
+                <span class="badge-admin">
+                    <i class="bi bi-shield-check"></i> Administrador
+                </span>
+                <a href="{% url 'admin:index' %}" target="_blank" class="btn-admin">
+                    <i class="bi bi-gear-fill"></i> Administración
+                </a>
+                {% endif %}
             </div>
         </div>
+    </section>
 
-        {% if user.is_staff %}
-        <span class="admin-badge">
-            <i class="bi bi-shield-check"></i> Administrador
-        </span>
-        <a href="{% url 'admin:index' %}" target="_blank" class="btn-admin">
-            <i class="bi bi-gear-fill"></i>
-            Panel de Administración
+    <!-- MÓDULOS PRINCIPALES -->
+    <div class="sec-head">
+        <div>
+            <h2 class="sec-title">
+                <span class="sec-icon"><i class="bi bi-grid-fill"></i></span>
+                Módulos principales
+            </h2>
+            <p class="sec-desc">Accede rápidamente a las funciones clave del sistema.</p>
+        </div>
+    </div>
+
+    <section class="mod-grid">
+        <article class="mod-card c-blue">
+            <div class="mod-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
+            <h5>Plan Captura</h5>
+            <p>Gestión y edición de expedientes, personal y registros de capacitación.</p>
+            <a href="{% url 'plan_captura' %}" class="mod-link">
+                <span>Ingresar a matriz</span>
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        </article>
+
+        <article class="mod-card c-green">
+            <div class="mod-icon"><i class="bi bi-graph-up-arrow"></i></div>
+            <h5>Programa Real</h5>
+            <p>Consulta y seguimiento del avance de las actividades de capacitación.</p>
+            <a href="{% url 'programa_real' %}" class="mod-link">
+                <span>Ver programa</span>
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        </article>
+
+        <article class="mod-card c-orange">
+            <div class="mod-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
+            <h5>Cursos Nuevos</h5>
+            <p>Administración del catálogo de cursos y asignación de participantes.</p>
+            <a href="{% url 'cursos_nuevos' %}" class="mod-link">
+                <span>Administrar cursos</span>
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        </article>
+
+        <article class="mod-card c-purple">
+            <div class="mod-icon"><i class="bi bi-mortarboard-fill"></i></div>
+            <h5>Capacitaciones</h5>
+            <p>Reporte trimestral Formato 1159: historial, totales y descarga PDF.</p>
+            <a href="{% url 'capacitaciones' %}" class="mod-link">
+                <span>Revisar reporte</span>
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        </article>
+    </section>
+
+    {% if user.is_staff %}
+    <!-- ADMINISTRACIÓN -->
+    <div class="sec-head">
+        <div>
+            <h2 class="sec-title">
+                <span class="sec-icon"><i class="bi bi-tools"></i></span>
+                Herramientas administrativas
+            </h2>
+            <p class="sec-desc">Importar, editar y mantener la información del sistema.</p>
+        </div>
+    </div>
+
+    <section class="admin-block">
+        <div class="mod-grid">
+            <article class="mod-card c-indigo">
+                <div class="mod-icon"><i class="bi bi-pencil-square"></i></div>
+                <h5>Modificar Plan</h5>
+                <p>Edición y corrección de información del Plan Captura.</p>
+                <a href="{% url 'lista_modificar_plan' %}" class="mod-link">
+                    <span>Modificar datos</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </article>
+
+            <article class="mod-card c-cyan">
+                <div class="mod-icon"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                <h5>Carga Masiva STPS</h5>
+                <p>Importación de información con el formato Excel de STPS.</p>
+                <a href="{% url 'cargar_stps' %}" class="mod-link">
+                    <span>Procesar formato</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </article>
+
+            <article class="mod-card c-green">
+                <div class="mod-icon"><i class="bi bi-table"></i></div>
+                <h5>Modificar STPS</h5>
+                <p>Consulta y edición manual de registros importados.</p>
+                <a href="{% url 'lista_modificar_stps' %}" class="mod-link">
+                    <span>Ver registros</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </article>
+
+            <article class="mod-card c-blue">
+                <div class="mod-icon"><i class="bi bi-person-plus-fill"></i></div>
+                <h5>Captura Manual</h5>
+                <p>Registro individual de empleados y cursos de capacitación.</p>
+                <a href="{% url 'captura_manual_stps' %}" class="mod-link">
+                    <span>Abrir formulario</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </article>
+
+            <article class="mod-card c-teal">
+                <div class="mod-icon"><i class="bi bi-file-earmark-spreadsheet-fill"></i></div>
+                <h5>Carga Masiva Plan</h5>
+                <p>Importación desde el archivo PLAN Y PROGRAMA 2026.</p>
+                <a href="{% url 'cargar_excel' %}" class="mod-link">
+                    <span>Subir archivo Excel</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </article>
+        </div>
+    </section>
+
+    <!-- DC-3 -->
+    <section class="dc3">
+        <div class="dc3-left">
+            <div class="dc3-icon">
+                <i class="bi bi-file-earmark-check-fill"></i>
+            </div>
+            <div>
+                <h4>Automatización de documentos DC-3</h4>
+                <p>Genera el formato oficial STPS con los datos del sistema.</p>
+            </div>
+        </div>
+        <a href="{% url 'visor_dc3_excel' %}" class="dc3-btn">
+            <i class="bi bi-file-earmark-excel-fill text-success"></i>
+            Rellenar formato DC-3
+            <i class="bi bi-arrow-right"></i>
         </a>
-        {% endif %}
-    </div>
-</div>
-
-<!-- ==================== MÓDULOS PRINCIPALES ==================== -->
-<div class="row g-3">
-
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="dash-card">
-            <div class="icon icon-blue">
-                <i class="bi bi-file-earmark-text-fill"></i>
-            </div>
-            <h6>Plan Captura</h6>
-            <p>Gestión y edición de expedientes del personal.</p>
-            <a href="{% url 'plan_captura' %}" class="btn-enter stretched-link">Ingresar Matriz</a>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="dash-card">
-            <div class="icon icon-green">
-                <i class="bi bi-graph-up-arrow"></i>
-            </div>
-            <h6>Programa Real</h6>
-            <p>Avance físico-financiero y cumplimiento en tiempo real.</p>
-            <a href="{% url 'programa_real' %}" class="btn-enter stretched-link">Ver Detalles</a>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="dash-card">
-            <div class="icon icon-amber">
-                <i class="bi bi-folder-plus"></i>
-            </div>
-            <h6>Cursos Nuevos</h6>
-            <p>Matriz resumida por periodos históricos.</p>
-            <a href="{% url 'cursos_nuevos' %}" class="btn-enter stretched-link">Administrar Cursos</a>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="dash-card">
-            <div class="icon icon-purple">
-                <i class="bi bi-mortarboard-fill"></i>
-            </div>
-            <h6>Capacitaciones</h6>
-            <p>Historial de constancias y personal capacitado.</p>
-            <a href="{% url 'capacitaciones' %}" class="btn-enter stretched-link">Revisar Historial</a>
-        </div>
-    </div>
+    </section>
+    {% endif %}
 
 </div>
 
-{% if user.is_staff %}
-<!-- ==================== HERRAMIENTAS ADMIN ==================== -->
-<h2 class="section-title">
-    <i class="bi bi-tools"></i>
-    Herramientas Administrativas
-</h2>
-
-<div class="row g-3">
-
-    <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-        <div class="dash-card">
-            <div class="icon icon-indigo">
-                <i class="bi bi-pencil-square"></i>
-            </div>
-            <h6>Modificar Plan</h6>
-            <p>Edición y corrección de datos del Plan Captura.</p>
-            <a href="{% url 'lista_modificar_plan' %}" class="btn-enter stretched-link">Modificar Datos</a>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-        <div class="dash-card">
-            <div class="icon icon-cyan">
-                <i class="bi bi-cloud-arrow-up-fill"></i>
-            </div>
-            <h6>Carga Masiva STPS</h6>
-            <p>Importación automática desde formato Excel STPS.</p>
-            <a href="{% url 'cargar_stps' %}" class="btn-enter stretched-link">Procesar Formato STPS</a>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-        <div class="dash-card">
-            <div class="icon icon-green">
-                <i class="bi bi-pencil-square"></i>
-            </div>
-            <h6>Modificar STPS</h6>
-            <p>Edición manual de registros importados.</p>
-            <a href="{% url 'lista_modificar_stps' %}" class="btn-enter stretched-link">Ver y Editar Datos</a>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-        <div class="dash-card">
-            <div class="icon icon-blue">
-                <i class="bi bi-person-plus-fill"></i>
-            </div>
-            <h6>Captura Manual</h6>
-            <p>Registro individual de empleados o cursos.</p>
-            <a href="{% url 'captura_manual_stps' %}" class="btn-enter stretched-link">Abrir Formulario</a>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-        <div class="dash-card">
-            <div class="icon icon-emerald">
-                <i class="bi bi-file-earmark-spreadsheet-fill"></i>
-            </div>
-            <h6>Carga Masiva Plan</h6>
-            <p>Importar PLAN Y PROGRAMA 2026.</p>
-            <a href="{% url 'cargar_excel' %}" class="btn-enter stretched-link">Subir Archivo Excel</a>
-        </div>
-    </div>
-
-</div>
-
-<!-- ==================== BANNER DC-3 ==================== -->
-<div class="banner-dc3">
-    <div>
-        <h5>
-            <i class="bi bi-lightning-charge-fill text-warning"></i>
-            Automatización DC-3
-        </h5>
-        <p>Relleno automático de la plantilla oficial STPS.</p>
-    </div>
-    <a href="{% url 'visor_dc3_excel' %}" class="btn-dc3">
-        <i class="bi bi-file-earmark-excel-fill text-success"></i>
-        Rellenar Formato DC-3
-    </a>
-</div>
-{% endif %}
-<a href="{% url 'cargar_programa_real' %}" class="btn btn-outline-success btn-sm">
-    <i class="bi bi-file-earmark-excel"></i> Cargar Excel
-</a>
 <script>
-    // Fecha actual en español
-    const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
-                   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const hoy = new Date();
+document.getElementById('fecha-dia').textContent = dias[hoy.getDay()];
+document.getElementById('fecha-completa').textContent =
+    `${hoy.getDate()} de ${meses[hoy.getMonth()]} de ${hoy.getFullYear()}`;
 
-    const hoy = new Date();
-    const diaSemana = dias[hoy.getDay()];
-    const dia = hoy.getDate();
-    const mes = meses[hoy.getMonth()];
-    const anio = hoy.getFullYear();
-
-    document.getElementById('fecha-dia').textContent = diaSemana;
-    document.getElementById('fecha-completa').textContent = `${dia} de ${mes} de ${anio}`;
+document.querySelectorAll('.mod-card').forEach((card, i) => {
+    card.style.animationDelay = `${0.08 + i * 0.04}s`;
+});
 </script>
 
 {% endblock %}
