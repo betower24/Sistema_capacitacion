@@ -92,43 +92,35 @@ class CursoExcel(models.Model):
 # PLAN DE CAPTURA (Actualizado según tu Excel)
 # =========================
 class PlanCaptura(models.Model):
-    # Columnas iniciales
     no = models.IntegerField(default=1, verbose_name="No.")
-    centro_costos = models.CharField(max_length=100, verbose_name="Centro de Costos")
-    puesto = models.CharField(max_length=100, verbose_name="Puesto")
-    nomina = models.CharField(max_length=50, verbose_name="Nómina")
+    centro_costos = models.CharField(max_length=100, blank=True, default="", verbose_name="Centro de Costos")
+    puesto = models.CharField(max_length=100, blank=True, default="", verbose_name="Puesto")
+    nomina = models.CharField(max_length=50, blank=True, default="", verbose_name="Nómina")
     nombre_trabajador = models.CharField(max_length=255, null=True, blank=True)
-    area = models.CharField(max_length=100, verbose_name="Área")
-    curp = models.CharField(max_length=18, verbose_name="CURP")
+    area = models.CharField(max_length=100, blank=True, default="", verbose_name="Área")
+    curp = models.CharField(max_length=18, blank=True, default="", verbose_name="CURP")
 
-    # Bloque de Inducción
     induccion = models.BooleanField(default=False, verbose_name="Inducción")
-    columna_ind1 = models.CharField(max_length=100, blank=True, null=True, verbose_name="Columna1 (Inducción)")
-    columna_ind2 = models.CharField(max_length=100, blank=True, null=True, verbose_name="Columna2 (Inducción)")
+    columna_ind1 = models.CharField(max_length=100, blank=True, null=True)
+    columna_ind2 = models.CharField(max_length=100, blank=True, null=True)
 
-    # Bloque de Capacitación
     capacitacion = models.BooleanField(default=False, verbose_name="Capacitación")
-    columna_cap1 = models.CharField(max_length=100, blank=True, null=True, verbose_name="Columna1 (Capacitación)")
-    columna_cap2 = models.CharField(max_length=100, blank=True, null=True, verbose_name="Columna2 (Capacitación)")
+    columna_cap1 = models.CharField(max_length=100, blank=True, null=True)
+    columna_cap2 = models.CharField(max_length=100, blank=True, null=True)
 
-    # Curso
-    modalidad_curso = models.CharField(max_length=100, default='', verbose_name="Modalidad del Curso")
+    modalidad_curso = models.CharField(max_length=100, blank=True, default="", verbose_name="Modalidad del Curso")
     curso = models.ForeignKey(Curso, on_delete=models.CASCADE, verbose_name="Nombre del Curso")
 
-    # Fechas y Duración (FI, FT, D)
-    fecha_inicio = models.DateField(verbose_name="FI")
-    fecha_termino = models.DateField(verbose_name="FT")
-    duracion = models.IntegerField(verbose_name="D")
+    fecha_inicio = models.DateField(null=True, blank=True, verbose_name="FI")
+    fecha_termino = models.DateField(null=True, blank=True, verbose_name="FT")
+    duracion = models.IntegerField(default=0, verbose_name="D")
 
-    # Datos finales (G, Género, Costo, Horas)
-    
-    genero = models.CharField(max_length=10, verbose_name="Género")
-    costo = models.CharField(max_length=20, verbose_name="Costo")
-    total_horas = models.IntegerField(verbose_name="Total de Horas")
+    genero = models.CharField(max_length=10, blank=True, default="", verbose_name="Género")
+    costo = models.CharField(max_length=20, blank=True, default="S/COSTO", verbose_name="Costo")
+    total_horas = models.IntegerField(default=0, verbose_name="Total de Horas")
 
     def __str__(self):
         return f"{self.no} - {self.nombre_trabajador}"
-
 
 
 # =========================

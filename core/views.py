@@ -729,170 +729,274 @@ def descargar_pdf(request):
 # CARGA DE EXCEL PLAN CAPTURA
 # ==========================================
 @login_required
+@transaction.atomic
 def cargar_excel(request):
-    if request.method == "POST" and request.FILES.get('archivo_excel'):
-        excel_file = request.FILES['archivo_excel']
-        if not excel_file.name.endswith('.xlsx') and not excel_file.name.endswith('.xls'):
-            messages.error(request, 'Formato inválido. Por favor sube un archivo de Excel (.xlsx o .xls).')
-            return redirect('cargar_excel')
+    if request.method != "POST" or not request.FILES.get("archivo_excel"):
+        return render(request, "core/cargar_excel.html")
 
-        try:
-            wb = openpyxl.load_workbook(excel_file, data_only=True)
+    excel_file = request.FILES["archivo_excel"]
+    nombre = excel_file.name.lower()
+    if not nombre.endswith((".xlsx", ".xls")):
+        messages.error(request, "Formato inválido. Sube un archivo Excel (.xlsx o .xls).")
+        return redirect("cargar_excel")
+
+    try:
+        wb = openpyxl.load_workbook(excel_file, data_only=True)
+
+        # 1) Elegir la hoja correcta (NO la de nóminas)
+        worksheet = None
+        for name in wb.sheetnames:
+            n = name.upper()
+            if "PLAN" in n or "PROGRAMA" in n or "DC-2" in n or "DC2" in n:
+                worksheet = wb[name]
+                break
+        if worksheet is None:
+            # fallback: la hoja con más columnas / no NOMINAS
+            for name in wb.sheetnames:
+                if "NOMINA" not in name.upper():
+                    worksheet = wb[name]
+                    break
+        if worksheet is None:
             worksheet = wb.active
-            
-            idx_no, idx_cc, idx_puesto, idx_nomina, idx_nombre, idx_area, idx_curp, idx_induccion = 0, 1, 2, 3, 4, 5, 6, 7
-            idx_curso, idx_fi, idx_ft, idx_duracion, idx_horas = 13, 14, 15, 16, 18
 
-            for fila_head in range(16, 19):
-                row_head = [str(cell.value).strip().upper() if cell.value is not None else "" for cell in worksheet[fila_head]]
-                for i, text in enumerate(row_head):
-                    if "NÓMINA" in text or "NOMINA" in text: idx_nomina = i
-                    elif "NOMBRE" in text and "CURSO" not in text: idx_nombre = i
-                    elif "PUESTO" in text: idx_puesto = i
-                    elif "CENTRO" in text or "C.C" in text: idx_cc = i
-                    elif "CURP" in text: idx_curp = i
-                    elif "ÁREA" in text or "AREA" in text: idx_area = i
-                    elif "INDUC" in text: idx_induccion = i
-                    elif "NOMBRE DEL CURSO" in text or "CURSO" in text: idx_curso = i
-                    elif "FI" == text or "INICIO" in text: idx_fi = i
-                    elif "FT" == text or "TÉRMINO" in text or "TERMINO" in text: idx_ft = i
-                    elif "D" == text and len(text) == 1: idx_duracion = i
-                    elif "TOTAL HORAS" in text or "TOTAL DE HORAS" in text: idx_horas = i
+        # 2) Índices por defecto según tu archivo real
+        idx_no = 0
+        idx_cc = 1
+        idx_puesto = 2
+        idx_nomina = 3
+        idx_nombre = 4
+        idx_area = 5
+        idx_curp = 6
+        idx_induccion = 7
+        idx_cap = 10
+        idx_modalidad = 13
+        idx_curso = 14
+        idx_fi = 15
+        idx_ft = 16
+        idx_duracion = 17
+        idx_genero = 18
+        idx_costo = 19
+        idx_horas = 20
 
-            registros_creados = 0
-            
-            ultimo_no = "1"
-            ultimo_cc = "GENERAL"
-            ultimo_puesto = "OPERATIVO"
-            ultimo_nomina = "0000"
-            ultimo_nombre = "TRABAJADOR EN PROCESO"
-            ultimo_area = "PRODUCCION"
-            ultimo_curp = "XAXX010101X"
-            ultimo_induccion = False
-            ultimo_curso = "CURSO DE CAPACITACIÓN"
-            ultima_fi = date.today()
-            ultima_ft = date.today()
-            ultima_duracion = 0
-            ultima_horas = 0
+        # 3) Detectar encabezados (filas 1–30)
+        header_row = None
+        for r in range(1, 31):
+            vals = []
+            for cell in worksheet[r]:
+                vals.append(str(cell.value).strip().upper() if cell.value is not None else "")
+            fila_txt = " | ".join(vals)
+            if ("NÓMINA" in fila_txt or "NOMINA" in fila_txt) and "CURP" in fila_txt and "PUESTO" in fila_txt:
+                header_row = r
+                for i, text in enumerate(vals):
+                    if text in ("NO", "N°", "Nº") or text.startswith("NO."):
+                        idx_no = i
+                    elif "CENTRO" in text or text in ("C.C", "CC"):
+                        idx_cc = i
+                    elif "PUESTO" in text:
+                        idx_puesto = i
+                    elif "NÓMINA" in text or "NOMINA" in text:
+                        idx_nomina = i
+                    elif "NOMBRE DEL TRABAJADOR" in text or (text == "NOMBRE") or (
+                        "NOMBRE" in text and "CURSO" not in text
+                    ):
+                        idx_nombre = i
+                    elif "ÁREA" in text or "AREA" in text:
+                        idx_area = i
+                    elif "CURP" in text:
+                        idx_curp = i
+                    elif "INDUC" in text:
+                        idx_induccion = i
+                    elif "CAPACIT" in text:
+                        idx_cap = i
+                    elif "MODALIDAD" in text:
+                        idx_modalidad = i
+                    elif "NOMBRE DEL CURSO" in text:
+                        idx_curso = i
+                    elif text == "FI" or "FECHA INICIO" in text or text == "INICIO":
+                        idx_fi = i
+                    elif text == "FT" or "TÉRMINO" in text or "TERMINO" in text:
+                        idx_ft = i
+                    elif text == "D" or "DURACION" in text or "DURACIÓN" in text:
+                        idx_duracion = i
+                    elif "GÉNERO" in text or "GENERO" in text:
+                        idx_genero = i
+                    elif "COSTO" in text:
+                        idx_costo = i
+                    elif "TOTAL" in text and "HORA" in text:
+                        idx_horas = i
+                break
 
-            for idx_fila, row_tuple in enumerate(worksheet.iter_rows(values_only=True), start=1):
-                if idx_fila <= 18:
+        start_row = (header_row + 2) if header_row else 19  # suele haber subfila FI/FT/D
+
+        def limpio(val):
+            if val is None:
+                return ""
+            s = str(val).strip()
+            if s.endswith(".0"):
+                try:
+                    float(s)
+                    s = s[:-2]
+                except ValueError:
+                    pass
+            if s.upper() in ("NONE", "NAN", "#N/A", "#NA", "-"):
+                return ""
+            return s
+
+        def parsear_fecha(campo):
+            if not campo:
+                return None
+            if isinstance(campo, datetime):
+                return campo.date()
+            if isinstance(campo, date):
+                return campo
+            str_f = str(campo).strip()[:10]
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d", "%d-%m-%Y"):
+                try:
+                    return datetime.strptime(str_f, fmt).date()
+                except ValueError:
                     continue
+            return None
 
-                if not row_tuple or all(cell is None for cell in row_tuple):
-                    continue
+        def a_entero(val, default=0):
+            if val is None or val == "":
+                return default
+            try:
+                return int(float(str(val).replace(",", "").strip()))
+            except (ValueError, TypeError):
+                return default
 
-                row = list(row_tuple)
-                while len(row) < 30:
-                    row.append(None)
+        # Valores “arrastrados” (filas hijas de un mismo trabajador)
+        ultimo = {
+            "no": 1,
+            "cc": "",
+            "puesto": "",
+            "nomina": "",
+            "nombre": "",
+            "area": "",
+            "curp": "",
+            "genero": "",
+        }
 
-                val_no = str(row[idx_no]).strip() if row[idx_no] is not None else ""
-                val_cc = str(row[idx_cc]).strip() if row[idx_cc] is not None else ""
-                val_puesto = str(row[idx_puesto]).strip() if row[idx_puesto] is not None else ""
-                val_nomina = str(row[idx_nomina]).strip() if row[idx_nomina] is not None else ""
-                val_nombre = str(row[idx_nombre]).strip() if row[idx_nombre] is not None else ""
-                val_area = str(row[idx_area]).strip() if row[idx_area] is not None else ""
-                val_curp = str(row[idx_curp]).strip() if row[idx_curp] is not None else ""
+        registros_creados = 0
+        registros_omitidos = 0
 
-                val_nombre_upper = val_nombre.upper()
-                val_nomina_upper = val_nomina.upper()
+        for idx_fila, row_tuple in enumerate(worksheet.iter_rows(values_only=True), start=1):
+            if idx_fila < start_row:
+                continue
+            if not row_tuple or all(c is None for c in row_tuple):
+                continue
 
-                if "TOTAL" in val_nombre_upper or "TOTAL" in val_nomina_upper or "ELABORÓ" in val_nombre_upper:
-                    continue
+            row = list(row_tuple)
+            while len(row) < 25:
+                row.append(None)
 
-                if val_no and val_no not in ["", "0", "0.0", "None", "NONE"]: ultimo_no = val_no
-                if val_cc and val_cc not in ["", "0", "0.0", "None", "NONE"]: ultimo_cc = val_cc
-                if val_puesto and val_puesto not in ["", "0", "0.0", "None", "NONE"]: ultimo_puesto = val_puesto
-                if val_nomina and val_nomina not in ["", "0", "0.0", "None", "NONE"]: ultimo_nomina = val_nomina
-                if val_nombre and val_nombre not in ["", "0", "0.0", "None", "NONE"]: ultimo_nombre = val_nombre
-                if val_area and val_area not in ["", "0", "0.0", "None", "NONE"]: ultimo_area = val_area
-                if val_curp and val_curp not in ["", "0", "0.0", "None", "NONE"]: ultimo_curp = val_curp
+            val_nombre = limpio(row[idx_nombre] if idx_nombre < len(row) else None)
+            val_nomina = limpio(row[idx_nomina] if idx_nomina < len(row) else None)
+            val_curso = limpio(row[idx_curso] if idx_curso < len(row) else None)
+            val_modalidad = limpio(row[idx_modalidad] if idx_modalidad < len(row) else None)
 
-                if not ultimo_nombre or ultimo_nombre.upper() in ["", "0", "0.0", "NONE", "TRABAJADOR EN PROCESO"]:
-                    if val_nombre:
-                        ultimo_nombre = val_nombre
-                    else:
-                        continue
+            # Saltar totales / firmas
+            check = f"{val_nombre} {val_nomina} {val_curso}".upper()
+            if any(x in check for x in ("TOTAL", "ELABORÓ", "ELABORO", "AUTORIZÓ", "AUTORIZO", "VO.BO")):
+                continue
 
-                val_curso = str(row[idx_curso]).strip() if row[idx_curso] is not None else ""
-                if not val_curso or val_curso.upper() in ["", "0", "0.0", "NONE"]:
-                    val_curso = str(row[idx_curso + 1]).strip() if row[idx_curso + 1] is not None else ""
+            # Actualizar datos del trabajador si vienen en la fila
+            val_no = limpio(row[idx_no] if idx_no < len(row) else None)
+            val_cc = limpio(row[idx_cc] if idx_cc < len(row) else None)
+            val_puesto = limpio(row[idx_puesto] if idx_puesto < len(row) else None)
+            val_area = limpio(row[idx_area] if idx_area < len(row) else None)
+            val_curp = limpio(row[idx_curp] if idx_curp < len(row) else None)
+            val_genero = limpio(row[idx_genero] if idx_genero < len(row) else None)
 
-                if val_curso and val_curso.upper() not in ["", "0", "0.0", "NONE"]:
-                    ultimo_curso = val_curso
+            if val_no:
+                try:
+                    ultimo["no"] = int(float(val_no))
+                except ValueError:
+                    pass
+            if val_cc:
+                ultimo["cc"] = val_cc
+            if val_puesto:
+                ultimo["puesto"] = val_puesto
+            if val_nomina:
+                ultimo["nomina"] = val_nomina
+            if val_nombre:
+                ultimo["nombre"] = val_nombre
+            if val_area:
+                ultimo["area"] = val_area
+            if val_curp:
+                ultimo["curp"] = val_curp[:18]
+            if val_genero:
+                g = val_genero.upper()
+                if g in ("H", "M", "F", "HOMBRE", "MUJER"):
+                    ultimo["genero"] = "H" if g in ("H", "HOMBRE") else "M"
 
-                def parsear_fecha(campo):
-                    if not campo: return None
-                    if isinstance(campo, (date, datetime)): return campo.date() if isinstance(campo, datetime) else campo
-                    str_f = str(campo).strip()
-                    for fmt in ["%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d"]:
-                        try: return datetime.strptime(str_f[:10], fmt).date()
-                        except ValueError: continue
-                    return None
+            # Solo guardar si hay CURSO (evita filas vacías de personal sin capacitación)
+            if not val_curso:
+                registros_omitidos += 1
+                continue
 
-                val_fi = parsear_fecha(row[idx_fi])
-                val_ft = parsear_fecha(row[idx_ft])
+            if not ultimo["nombre"] and not ultimo["nomina"]:
+                registros_omitidos += 1
+                continue
 
-                if val_fi: ultima_fi = val_fi
-                if val_ft: ultima_ft = val_ft
-                elif val_fi: ultima_ft = val_fi
+            fi = parsear_fecha(row[idx_fi] if idx_fi < len(row) else None)
+            ft = parsear_fecha(row[idx_ft] if idx_ft < len(row) else None)
+            if fi and not ft:
+                ft = fi
+            if not fi:
+                fi = date.today()
+            if not ft:
+                ft = fi
 
-                val_duracion = row[idx_duracion]
-                val_horas = row[idx_horas] if idx_horas < len(row) and row[idx_horas] is not None else val_duracion
+            duracion = a_entero(row[idx_duracion] if idx_duracion < len(row) else None, 0)
+            horas = a_entero(row[idx_horas] if idx_horas < len(row) else None, duracion)
+            costo = limpio(row[idx_costo] if idx_costo < len(row) else None) or "S/COSTO"
 
-                try: 
-                    if val_duracion is not None: ultima_duracion = int(float(val_duracion))
-                except: pass
+            ind_raw = limpio(row[idx_induccion] if idx_induccion < len(row) else None).upper()
+            es_induccion = ind_raw in ("X", "SI", "SÍ", "1", "TRUE")
 
-                try: 
-                    if val_horas is not None: ultima_horas = int(float(val_horas))
-                    elif val_duracion is not None: ultima_horas = ultima_duracion
-                except: pass
+            cap_raw = limpio(row[idx_cap] if idx_cap < len(row) else None).upper()
+            es_capacitacion = cap_raw in ("X", "SI", "SÍ", "1", "TRUE") or bool(val_curso)
 
-                val_induccion_raw = str(row[idx_induccion]).strip().upper() if row[idx_induccion] is not None else ""
-                if val_induccion_raw in ['X', 'SI', 'SÍ', '1', 'TRUE']:
-                    ultimo_induccion = True
-                elif row[idx_induccion] is not None:
-                    ultimo_induccion = False
+            curso_obj, _ = Curso.objects.get_or_create(nombre=val_curso[:255])
 
-                if ultimo_nomina.endswith('.0'):
-                    ultimo_nomina = ultimo_nomina[:-2]
+            PlanCaptura.objects.create(
+                no=ultimo["no"],
+                centro_costos=ultimo["cc"][:100] or "S/D",
+                puesto=ultimo["puesto"][:100] or "S/D",
+                nomina=ultimo["nomina"][:50] or "S/D",
+                nombre_trabajador=(ultimo["nombre"] or "")[:255],
+                area=ultimo["area"][:100] or "S/D",
+                curp=(ultimo["curp"] or "")[:18],
+                induccion=es_induccion,
+                columna_ind1="",
+                columna_ind2="",
+                capacitacion=es_capacitacion,
+                columna_cap1="",
+                columna_cap2="",
+                modalidad_curso=(val_modalidad or "")[:100],
+                curso=curso_obj,
+                fecha_inicio=fi,
+                fecha_termino=ft,
+                duracion=duracion,
+                genero=(ultimo["genero"] or "H")[:10],
+                costo=costo[:20],
+                total_horas=horas,
+            )
+            registros_creados += 1
 
-                try: numero_registro = int(float(ultimo_no))
-                except: numero_registro = registros_creados + 1
+        messages.success(
+            request,
+            f"Carga terminada. Se insertaron {registros_creados} registros en Plan Captura "
+            f"(omitidos sin curso: {registros_omitidos}). Hoja: {worksheet.title}",
+        )
+        return redirect("plan_captura")
 
-                curso_obj, _ = Curso.objects.get_or_create(nombre=ultimo_curso)
-
-                PlanCaptura.objects.create(
-                    no=numero_registro, 
-                    centro_costos=ultimo_cc, 
-                    puesto=ultimo_puesto,
-                    nomina=ultimo_nomina, 
-                    nombre_trabajador=ultimo_nombre, 
-                    area=ultimo_area,
-                    curp=ultimo_curp, 
-                    induccion=ultimo_induccion, 
-                    columna_ind1="", 
-                    columna_ind2="",
-                    fecha_inicio=ultima_fi, 
-                    fecha_termino=ultima_ft, 
-                    duracion=ultima_duracion,
-                    total_horas=ultima_horas, 
-                    curso=curso_obj
-                )
-                registros_creados += 1
-
-            messages.success(request, f'¡Excelente! Se han capturado {registros_creados} registros directamente en PlanCaptura.')
-            return redirect('dashboard')
-            
-        except Exception as e:
-            import traceback
-            print(traceback.format_exc())
-            messages.error(request, f'Error crítico en la inserción: {str(e)}')
-            return redirect('cargar_excel')
-
-    return render(request, 'core/cargar_excel.html')
-
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        messages.error(request, f"Error al procesar el Excel: {e}")
+        return redirect("cargar_excel")
 
 # ==========================================
 # VISOR DC-3 (BÚSQUEDA)

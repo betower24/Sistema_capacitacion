@@ -65,14 +65,7 @@ class CursoExcelForm(forms.ModelForm):
         opciones = [('', '-- Selecciona un curso --')]
         opciones += [(c.nombre, c.nombre) for c in cursos]
         self.fields['nombre'].choices = opciones
-class PlanCapturaForm(forms.ModelForm):
-    class Meta:
-        model = PlanCaptura
-        fields = '__all__'
-        widgets = {
-            'fecha_inicio': forms.DateInput(attrs={'type': 'date'}),
-            'fecha_termino': forms.DateInput(attrs={'type': 'date'}),
-        }
+
 
 
 from django import forms
