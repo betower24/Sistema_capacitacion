@@ -1,96 +1,33 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div class="row g-4">
-    <div class="col-12">
-        <div class="card shadow-sm border-0 rounded-3 p-4 bg-white">
-            <div class="d-flex align-items-center mb-2">
-                <span class="fs-4 me-2"></span>
-                <h4 class="fw-bold m-0 text-dark">Nueva Captura</h4>
-            </div>
-            <p class="text-muted small mb-4">Completa los campos para registrar un nuevo plan en el sistema.</p>
-            
-            <form method="post" autocomplete="off">
-                {% csrf_token %}
-                
-                <div class="django-form-fields horizontal-form-grid">
-                    {{ form.as_p }}
-                </div>
-
-                <div class="d-flex justify-content-end mt-3">
-                    <button type="submit" class="btn btn-primary bg-gradient px-4 py-2 fw-bold shadow-sm">
-                         Guardar Registro
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="col-12">
-        <div class="card shadow-sm border-0 rounded-3 p-4 bg-white">
-            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                <div class="d-flex align-items-center">
-                    <span class="fs-4 me-2"></span>
-                    <h4 class="fw-bold m-0 text-dark">Plan de Captura</h4>
-                </div>
-                <span class="badge bg-secondary rounded-pill fs-7 px-3 py-2">
-                    {{ registros|length }} Registros
-                </span>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-hover align-middle m-0">
-                    <thead class="table-light text-secondary">
-                        <tr>
-                            <th class="py-3 px-3 fw-semibold">Nombre del Trabajador</th>
-                            <th class="py-3 px-3 fw-semibold">Curso Asignado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for r in registros %}
-                        <tr>
-                            <td class="py-3 px-3 fw-medium text-dark">{{ r.nombre_trabajador }}</td>
-                            <td class="py-3 px-3">
-                                <span class="badge bg-light text-dark border px-3 py-1 fs-7 fw-normal">
-                                     {{ r.curso.nombre }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="2" class="text-center py-5 text-muted">
-                                <div class="fs-2 mb-2"></div>
-                                No hay registros capturados en este plan todavía.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const inputs = document.querySelectorAll('.django-form-fields input, .django-form-fields select, .django-form-fields textarea');
-        const paragraphs = document.querySelectorAll('.django-form-fields p');
-
-        // En diseño horizontal removimos el margen inferior exagerado de los <p> para que no rompa el alineado
-        paragraphs.forEach(p => p.classList.add('mb-2', 'w-100'));
-
-        inputs.forEach(input => {
-            if (input.tagName.toLowerCase() === 'select') {
-                input.classList.add('form-select', 'py-2');
-            } else {
-                input.classList.add('form-control', 'py-2');
-            }
-        });
-    });
-</script>
-
 <style>
-    /* Grid dinámico para que los campos de Django se pongan uno al lado del otro en pantallas grandes */
+    :root {
+        --pc-primary: #003087;
+        --pc-primary-light: #0052cc;
+        --pc-border: #e2e8f0;
+        --pc-gray: #64748b;
+    }
+
+    .pc-header {
+        background: linear-gradient(135deg, #003087 0%, #0052cc 100%);
+        border-radius: 16px;
+        padding: 1.35rem 1.5rem;
+        color: #fff;
+        margin-bottom: 1.5rem;
+    }
+
+    .pc-header h4 { font-weight: 800; margin: 0; }
+
+    .pc-card {
+        background: #fff;
+        border: 1px solid var(--pc-border);
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+
+    .pc-card-body { padding: 1.5rem; }
+
     .horizontal-form-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -99,26 +36,196 @@
 
     @media (min-width: 768px) {
         .horizontal-form-grid {
-            /* Se divide automáticamente en 2 columnas iguales. Si tu formulario tiene 3 campos, puedes cambiarlo a 1fr 1fr 1fr */
-            grid-template-columns: 1fr 1fr; 
+            grid-template-columns: 1fr 1fr;
             align-items: end;
+        }
+    }
+
+    @media (min-width: 1200px) {
+        .horizontal-form-grid {
+            grid-template-columns: repeat(3, 1fr);
         }
     }
 
     .django-form-fields label {
         display: block;
-        margin-bottom: 0.4rem;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #495057;
+        margin-bottom: 0.35rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #475569;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.04em;
     }
-    
-    .form-control:focus, .form-select:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+
+    .django-form-fields p { margin-bottom: 0; }
+
+    .btn-pc-primary {
+        background: var(--pc-primary);
+        border: none;
+        color: #fff;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 0.6rem 1.4rem;
+    }
+
+    .btn-pc-primary:hover {
+        background: var(--pc-primary-light);
+        color: #fff;
+    }
+
+    .pc-table {
+        font-size: 0.85rem;
+        margin: 0;
+    }
+
+    .pc-table thead th {
+        background: #003087 !important;
+        color: #fff !important;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        border: none;
+        white-space: nowrap;
+        padding: 0.8rem 0.6rem;
+    }
+
+    .pc-table tbody td {
+        vertical-align: middle;
+        border-color: #f1f5f9;
+        padding: 0.7rem 0.6rem;
+    }
+
+    .pc-table tbody tr:hover { background: #f8fafc; }
+
+    .badge-curso {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        font-weight: 600;
+        font-size: 0.75rem;
     }
 </style>
+
+<!-- Header -->
+<div class="pc-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+        <h4><i class="bi bi-journal-plus me-2"></i>Plan de Captura</h4>
+        <p class="mb-0 opacity-75 small">Registro y consulta de personal en el plan de capacitación</p>
+    </div>
+    <span class="badge rounded-pill px-3 py-2" style="background:rgba(255,255,255,.2);font-weight:600;">
+        {{ registros|length }} registros
+    </span>
+</div>
+
+<div class="row g-4">
+    <!-- Formulario -->
+    <div class="col-12">
+        <div class="pc-card">
+            <div class="pc-card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-plus-circle fs-4 text-primary me-2"></i>
+                    <div>
+                        <h5 class="fw-bold m-0">Nueva captura</h5>
+                        <p class="text-muted small mb-0">Completa los campos para registrar un nuevo plan en el sistema.</p>
+                    </div>
+                </div>
+
+                <form method="post" autocomplete="off">
+                    {% csrf_token %}
+                    <div class="django-form-fields horizontal-form-grid">
+                        {{ form.as_p }}
+                    </div>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="submit" class="btn btn-pc-primary">
+                            <i class="bi bi-save me-1"></i> Guardar Registro
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="col-12">
+        <div class="pc-card">
+            <div class="pc-card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-table fs-5 text-primary me-2"></i>
+                        <h5 class="fw-bold m-0">Registros capturados</h5>
+                    </div>
+                </div>
+
+                <div class="table-responsive rounded-3 border">
+                    <table class="table pc-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Nómina</th>
+                                <th>Nombre del trabajador</th>
+                                <th>CURP</th>
+                                <th>Curso asignado</th>
+                                <th>Fecha inicio</th>
+                                <th>Fecha término</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in registros %}
+                            <tr>
+                                <td class="text-secondary fw-semibold">{{ r.no }}</td>
+                                <td>{{ r.nomina|default:"—" }}</td>
+                                <td class="fw-medium text-dark">{{ r.nombre_trabajador|default:"—" }}</td>
+                                <td class="small">{{ r.curp|default:"—" }}</td>
+                                <td>
+                                    <span class="badge badge-curso rounded-pill px-3 py-2">
+                                        {% if r.curso %}{{ r.curso.nombre }}{% else %}—{% endif %}
+                                    </span>
+                                </td>
+                                <td class="small">
+                                    {% if r.fecha_inicio %}{{ r.fecha_inicio|date:"d/m/Y" }}{% else %}—{% endif %}
+                                </td>
+                                <td class="small">
+                                    {% if r.fecha_termino %}{{ r.fecha_termino|date:"d/m/Y" }}{% else %}—{% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'plan_captura' %}?borrar_id={{ r.id }}"
+                                       class="btn btn-sm btn-outline-danger"
+                                       title="Borrar"
+                                       onclick="return confirm('¿Eliminar el registro de {{ r.nombre_trabajador|default:r.id|escapejs }}?');">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>
+                                    No hay registros capturados en este plan todavía.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('.django-form-fields input, .django-form-fields select, .django-form-fields textarea').forEach(function (el) {
+        if (el.type === 'hidden') return;
+        if (el.tagName === 'SELECT') el.classList.add('form-select', 'py-2');
+        else if (el.type === 'checkbox') el.classList.add('form-check-input');
+        else el.classList.add('form-control', 'py-2');
+    });
+
+    document.querySelectorAll('.django-form-fields p').forEach(function (p) {
+        p.classList.add('mb-0', 'w-100');
+    });
+});
+</script>
 
 {% endblock %}

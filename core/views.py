@@ -317,17 +317,32 @@ def editar_registro_plan(request, pk):
     else:
         form = PlanCapturaForm(instance=registro)
     return render(request, 'editar_registro_plan.html', {'form': form, 'registro': registro})
-
-
 @login_required
 @transaction.atomic
 def plan_captura(request):
-    form = PlanCapturaForm(request.POST or None)
-    registros = PlanCaptura.objects.all()
-    if form.is_valid():
-        form.save()
+    # Borrar registro
+    borrar_id = request.GET.get('borrar_id')
+    if borrar_id:
+        reg = get_object_or_404(PlanCaptura, id=borrar_id)
+        reg.delete()
+        messages.success(request, 'Registro eliminado correctamente.')
         return redirect('plan_captura')
-    return render(request, 'plan_captura.html', {'form': form, 'registros': registros})
+
+    form = PlanCapturaForm(request.POST or None)
+    registros = PlanCaptura.objects.all().order_by('-id')
+
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Registro guardado correctamente en Plan Captura.')
+            return redirect('plan_captura')
+        else:
+            messages.error(request, 'Revisa los campos del formulario.')
+
+    return render(request, 'plan_captura.html', {
+        'form': form,
+        'registros': registros,
+    })
 @login_required
 @transaction.atomic
 def programa_real(request):

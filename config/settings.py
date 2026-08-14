@@ -22,7 +22,9 @@ STATIC_URL = 'static/'
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-znsii#o#)x721*ybcjy0!^bxq4!bg%sin7op74ff-dznh&lr1h'
-
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',   # ← esta línea es la clave
+]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 

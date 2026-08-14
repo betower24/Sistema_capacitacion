@@ -9,6 +9,15 @@
         --pr-border: #e2e8f0;
         --pr-gray: #64748b;
     }
+    .pr-logo {
+    height: 72px;      /* antes 52px */
+    width: auto;
+    max-width: 180px;  /* antes 130px */
+    object-fit: contain;
+    background: rgba(255,255,255,.95);
+    border-radius: 10px;
+    padding: 6px 10px;
+}
 
     .pr-header {
         background: linear-gradient(135deg, #003087 0%, #0052cc 100%);
@@ -512,19 +521,21 @@
         {% endfor %}
     ];
 
-    const LOGO_IZQ = "{% static 'img/logo_izq.png' %}";
-    const LOGO_DER = "{% static 'img/logo_der.png' %}";
+const LOGO_IZQ = "{% static 'img/logo_izq.png' %}";
+const LOGO_DER = "{% static 'img/logo_der.png' %}";
 
-    function cargarImagen(url) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.onload = () => resolve(img);
-            img.onerror = () => resolve(null);
-            img.src = url;
-        });
-    }
-
+function cargarImagen(url) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = () => {
+            console.error("No se pudo cargar:", url);
+            resolve(null);
+        };
+        img.src = url;
+    });
+}
     document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll('.django-form-fields input, .django-form-fields select, .django-form-fields textarea').forEach(el => {
             if (el.tagName === 'SELECT') el.classList.add('form-select');
@@ -582,11 +593,10 @@
         const pageWidth = pdf.internal.pageSize.getWidth();
         const center = pageWidth / 2;
 
-        const logoIzq = await cargarImagen(LOGO_IZQ);
-        const logoDer = await cargarImagen(LOGO_DER);
-        if (logoIzq) pdf.addImage(logoIzq, 'PNG', 14, 8, 28, 14);
-        if (logoDer) pdf.addImage(logoDer, 'PNG', pageWidth - 42, 8, 28, 14);
-
+       const logoIzq = await cargarImagen(LOGO_IZQ);
+const logoDer = await cargarImagen(LOGO_DER);
+if (logoIzq) pdf.addImage(logoIzq, 'PNG', 12, 6, 40, 20);
+if (logoDer) pdf.addImage(logoDer, 'PNG', pageWidth - 52, 6, 40, 20);
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(14);
         pdf.text('Gerencia Metropolitana Norte', center, 18, { align: 'center' });
@@ -657,9 +667,9 @@
 
         const logoIzq = await cargarImagen(LOGO_IZQ);
         const logoDer = await cargarImagen(LOGO_DER);
-        if (logoIzq) pdf.addImage(logoIzq, 'PNG', 14, 10, 28, 14);
-        if (logoDer) pdf.addImage(logoDer, 'PNG', pageWidth - 42, 10, 28, 14);
-
+       // PDF vertical (gráfica)
+if (logoIzq) pdf.addImage(logoIzq, 'PNG', 12, 8, 38, 19);
+if (logoDer) pdf.addImage(logoDer, 'PNG', pageWidth - 50, 8, 38, 19);
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(14);
         pdf.text('Gerencia Metropolitana Norte', center, 22, { align: 'center' });

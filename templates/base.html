@@ -29,14 +29,21 @@
 
         * { box-sizing: border-box; }
 
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(180deg, #eef2f7 0%, #f1f5f9 40%, #f8fafc 100%);
-            color: var(--dark);
-            min-height: 100vh;
-            margin: 0;
-        }
+       body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--dark);
+    min-height: 100vh;
+    margin: 0;
 
+    background-color: #f1f5f9;
+    background-image:
+        linear-gradient(rgba(15, 23, 42, 0.35), rgba(15, 23, 42, 0.45)),
+        url("{% static 'img/fondo.jpg' %}");
+    background-size: cover;
+    background-position: center center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
         /* ========== NAVBAR ========== */
         .custom-navbar {
             background: rgba(255, 255, 255, .92);
@@ -57,10 +64,10 @@
             gap: .7rem;
             text-decoration: none;
         }
+        
 
         .navbar-brand:hover { color: var(--saap-primary-dark) !important; }
 
-        /* Logo */
         .brand-logo {
             width: 42px;
             height: 42px;
@@ -72,7 +79,6 @@
             box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
         }
 
-        /* Fallback si no hay logo */
         .brand-icon-box {
             width: 40px;
             height: 40px;
@@ -97,7 +103,6 @@
             text-transform: uppercase;
         }
 
-        /* Usuario */
         .user-profile-card {
             background: var(--gray-50);
             padding: .3rem .4rem .3rem .85rem;
@@ -182,7 +187,6 @@
             transform: translateY(-1px);
         }
 
-        /* ========== CONTENEDOR ========== */
         .app-container {
             margin-top: 1.75rem;
             margin-bottom: 2.5rem;
@@ -194,7 +198,6 @@
             min-height: 60vh;
         }
 
-        /* ========== FOOTER ========== */
         .app-footer {
             text-align: center;
             padding: 1rem 0 1.75rem;
@@ -202,9 +205,7 @@
             font-size: .78rem;
             font-weight: 500;
         }
-        .app-footer span {
-            color: var(--gray-500);
-        }
+        .app-footer span { color: var(--gray-500); }
 
         @media (max-width: 768px) {
             .app-container {
@@ -220,6 +221,9 @@
                 width: 36px;
                 height: 36px;
             }
+            body {
+                background-attachment: scroll; /* mejor en móvil */
+            }
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -229,10 +233,9 @@
     <nav class="navbar custom-navbar sticky-top">
         <div class="container container-xl">
             <a class="navbar-brand" href="{% url 'dashboard' %}">
-                {# ===== LOGO: descomenta cuando tengas el archivo ===== #}
+                {# Si tienes logo: #}
                 {# <img src="{% static 'img/logo.png' %}" alt="Logo" class="brand-logo"> #}
 
-                {# Fallback mientras no hay logo #}
                 <div class="brand-icon-box">
                     <i class="bi bi-mortarboard-fill"></i>
                 </div>
