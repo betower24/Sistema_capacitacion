@@ -328,25 +328,25 @@ def plan_captura(request):
         form.save()
         return redirect('plan_captura')
     return render(request, 'plan_captura.html', {'form': form, 'registros': registros})
-
 @login_required
 @transaction.atomic
 def programa_real(request):
-    # Leer ID de edición
+    # ---- Borrar ----
+    borrar_id = request.GET.get('borrar_id')
+    if borrar_id:
+        reg = get_object_or_404(ProgramaReal, id=borrar_id)
+        reg.delete()
+        messages.success(request, "Registro eliminado correctamente.")
+        return redirect('programa_real')
+
+    # ---- Editar / Nuevo ----
     instance_id = request.GET.get('editar_id') or request.POST.get('editar_id')
     instance = None
-
-    print("===== DEBUG PROGRAMA REAL =====")
-    print("GET editar_id:", request.GET.get('editar_id'))
-    print("POST editar_id:", request.POST.get('editar_id'))
-    print("instance_id:", instance_id)
 
     if instance_id:
         try:
             instance = ProgramaReal.objects.get(pk=int(instance_id))
-            print("Registro encontrado:", instance.id, instance.nombre)
-        except (ProgramaReal.DoesNotExist, ValueError, TypeError) as e:
-            print("Error al buscar registro:", e)
+        except (ProgramaReal.DoesNotExist, ValueError, TypeError):
             instance = None
 
     if request.method == 'POST':
@@ -361,9 +361,6 @@ def programa_real(request):
         messages.error(request, 'Revisa los campos del formulario.')
     else:
         form = ProgramaRealForm(instance=instance)
-
-    print("editando:", instance is not None)
-    print("===============================")
 
     registros = ProgramaReal.objects.all().order_by('no')
     totales = registros.aggregate(

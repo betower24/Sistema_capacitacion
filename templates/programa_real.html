@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
 
 <style>
@@ -12,7 +13,7 @@
     .pr-header {
         background: linear-gradient(135deg, #003087 0%, #0052cc 100%);
         border-radius: 16px;
-        padding: 1.5rem 1.75rem;
+        padding: 1.25rem 1.5rem;
         color: white;
         margin-bottom: 1.5rem;
     }
@@ -20,6 +21,16 @@
     .pr-header h4 {
         font-weight: 800;
         margin: 0;
+    }
+
+    .pr-logo {
+        height: 52px;
+        width: auto;
+        max-width: 130px;
+        object-fit: contain;
+        background: rgba(255,255,255,.95);
+        border-radius: 10px;
+        padding: 4px 8px;
     }
 
     .pr-card {
@@ -175,24 +186,41 @@
         font-weight: 600;
         font-size: 0.9rem;
     }
+
+    @media (max-width: 576px) {
+        .pr-logo { height: 40px; max-width: 100px; }
+    }
 </style>
 
-<!-- Header -->
-<div class="pr-header d-flex flex-wrap justify-content-between align-items-center gap-3">
-    <div>
-        <h4><i class="bi bi-clipboard-data me-2"></i>Programa Real</h4>
-        <p class="mb-0 opacity-75 small">Plan y Programa Real de Capacitación 2026</p>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-        <a href="{% url 'cargar_programa_real' %}" class="btn btn-light btn-sm fw-semibold">
-            <i class="bi bi-file-earmark-excel text-success"></i> Cargar Excel
-        </a>
-        <button type="button" onclick="descargarPDFCursos()" class="btn btn-light btn-sm fw-semibold">
-            <i class="bi bi-file-earmark-pdf text-danger"></i> PDF Cursos
-        </button>
-        <button type="button" onclick="descargarPDFGrafica()" class="btn btn-light btn-sm fw-semibold">
-            <i class="bi bi-pie-chart text-primary"></i> PDF Gráfica
-        </button>
+<!-- Header con logos -->
+<div class="pr-header">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <img src="{% static 'img/logo_izq.png' %}"
+                 alt="Logo izquierdo"
+                 class="pr-logo"
+                 onerror="this.style.display='none'">
+            <div>
+                <h4><i class="bi bi-clipboard-data me-2"></i>Programa Real</h4>
+                <p class="mb-0 opacity-75 small">Plan y Programa Real de Capacitación 2026</p>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a href="{% url 'cargar_programa_real' %}" class="btn btn-light btn-sm fw-semibold">
+                <i class="bi bi-file-earmark-excel text-success"></i> Cargar Excel
+            </a>
+            <button type="button" onclick="descargarPDFCursos()" class="btn btn-light btn-sm fw-semibold">
+                <i class="bi bi-file-earmark-pdf text-danger"></i> PDF Cursos
+            </button>
+            <button type="button" onclick="descargarPDFGrafica()" class="btn btn-light btn-sm fw-semibold">
+                <i class="bi bi-pie-chart text-primary"></i> PDF Gráfica
+            </button>
+            <img src="{% static 'img/logo_der.png' %}"
+                 alt="Logo derecho"
+                 class="pr-logo"
+                 onerror="this.style.display='none'">
+        </div>
     </div>
 </div>
 
@@ -241,16 +269,12 @@
     <div class="col-12">
         <div class="pr-card">
             <div class="pr-card-body">
-             {% if editando %}
-<div class="alert alert-info">
-    DEBUG: ID={{ registro_editando.id }} |
-    Nombre={{ registro_editando.nombre }} |
-    Operativo={{ registro_editando.operativo }} |
-    Form nombre={{ form.nombre.value }}
-</div>
-{% else %}
-<div class="alert alert-warning">No está en modo edición</div>
-{% endif %}
+                {% if editando %}
+                <div class="edit-banner">
+                    <i class="bi bi-pencil-square me-1"></i>
+                    Editando: <strong>{{ registro_editando.nombre }}</strong> (ID {{ registro_editando.id }})
+                </div>
+                {% endif %}
 
                 <div class="d-flex align-items-center mb-3">
                     <i class="bi bi-{% if editando %}pencil-square{% else %}plus-circle{% endif %} fs-4 text-primary me-2"></i>
@@ -338,7 +362,7 @@
                                 <th class="text-center">Admin.</th>
                                 <th class="text-center">Conf.</th>
                                 <th class="text-center">Total</th>
-                                <th class="text-center">Acción</th>
+                                <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -362,11 +386,17 @@
                                 <td class="text-center">{{ reg.administrativo }}</td>
                                 <td class="text-center">{{ reg.confianza }}</td>
                                 <td class="text-center fw-bold">{{ reg.total_participantes }}</td>
-                                <td class="text-center">
+                                <td class="text-center text-nowrap">
                                     <a href="{% url 'programa_real' %}?editar_id={{ reg.id }}"
-                                       class="btn btn-sm btn-warning py-0 px-2"
+                                       class="btn btn-sm btn-outline-warning py-0 px-2"
                                        title="Editar">
-                                        ✏️
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'programa_real' %}?borrar_id={{ reg.id }}"
+                                       class="btn btn-sm btn-outline-danger py-0 px-2"
+                                       title="Borrar"
+                                       onclick="return confirm('¿Eliminar el registro «{{ reg.nombre|escapejs }}»?');">
+                                        <i class="bi bi-trash"></i>
                                     </a>
                                 </td>
                             </tr>
@@ -482,10 +512,23 @@
         {% endfor %}
     ];
 
+    const LOGO_IZQ = "{% static 'img/logo_izq.png' %}";
+    const LOGO_DER = "{% static 'img/logo_der.png' %}";
+
+    function cargarImagen(url) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = url;
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll('.django-form-fields input, .django-form-fields select, .django-form-fields textarea').forEach(el => {
             if (el.tagName === 'SELECT') el.classList.add('form-select');
-            else el.classList.add('form-control');
+            else if (el.type !== 'checkbox') el.classList.add('form-control');
         });
 
         document.getElementById('txtOperativo').textContent =
@@ -533,20 +576,22 @@
         });
     });
 
-    function descargarPDFCursos() {
+    async function descargarPDFCursos() {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('l', 'mm', 'letter');
         const pageWidth = pdf.internal.pageSize.getWidth();
         const center = pageWidth / 2;
 
+        const logoIzq = await cargarImagen(LOGO_IZQ);
+        const logoDer = await cargarImagen(LOGO_DER);
+        if (logoIzq) pdf.addImage(logoIzq, 'PNG', 14, 8, 28, 14);
+        if (logoDer) pdf.addImage(logoDer, 'PNG', pageWidth - 42, 8, 28, 14);
+
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(14);
-        pdf.text('Gerencia Metropolitana Norte', center, 15, { align: 'center' });
+        pdf.text('Gerencia Metropolitana Norte', center, 18, { align: 'center' });
         pdf.setFontSize(12);
-        pdf.text('Plan y Programa Real de Capacitación 2026', center, 22, { align: 'center' });
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
-     
+        pdf.text('Plan y Programa Real de Capacitación 2026', center, 25, { align: 'center' });
 
         const filas = registrosPDF.map(r => [
             r.no, r.nombre, '$' + r.importe, r.tipo, r.modalidad,
@@ -571,8 +616,8 @@
             headStyles: { fillColor: [0, 48, 135], textColor: 255, fontStyle: 'bold', fontSize: 7 },
             columnStyles: {
                 1: { halign: 'left', cellWidth: 45 },
-                2: { halign: 'right' },
-                6: { halign: 'left', cellWidth: 30 }
+                2: {halign: 'right' },
+                6: {halign: 'left', cellWidth: 30 }
             },
             didParseCell: function (data) {
                 if (data.row.index === filas.length - 1) {
@@ -604,11 +649,16 @@
         pdf.save('Programa_Real_Listado_Cursos.pdf');
     }
 
-    function descargarPDFGrafica() {
+    async function descargarPDFGrafica() {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'letter');
         const pageWidth = pdf.internal.pageSize.getWidth();
         const center = pageWidth / 2;
+
+        const logoIzq = await cargarImagen(LOGO_IZQ);
+        const logoDer = await cargarImagen(LOGO_DER);
+        if (logoIzq) pdf.addImage(logoIzq, 'PNG', 14, 10, 28, 14);
+        if (logoDer) pdf.addImage(logoDer, 'PNG', pageWidth - 42, 10, 28, 14);
 
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(14);
@@ -630,7 +680,7 @@
             { color: [59, 130, 246], label: 'OPERATIVO SINDICALIZADO', valor: datos.operativo },
             { color: [234, 179, 8], label: 'PROMOTORES SOCIALES', valor: datos.promotores },
             { color: [148, 163, 184], label: 'ADMINISTRATIVO SINDICALIZADO', valor: datos.administrativo },
-            { color: [245, 158, 11], label: 'CONFIANZA', valor: datos.confianza },
+            { color: [245, 158, 11], label: 'CONFIANZA', valor: datos.confianza }
         ];
 
         leyenda.forEach(item => {
